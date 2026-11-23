@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="Assets/cato.png" width="140" alt="Cato">
+  <img src="Assets/banner.jpg" alt="Cato" width="100%">
 </p>
-
-<h1 align="center">Cato</h1>
 
 <p align="center">Un notch dinámico para Windows: música, Pomodoro, tiempo, tareas y más, en la parte de arriba de tu pantalla.</p>
 
