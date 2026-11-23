@@ -1,0 +1,28 @@
+<Window x:Class="Cato.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuración de Cato" Width="540" Height="700"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="Assets/cato.ico">
+    <Border Background="#F7161618" CornerRadius="20" BorderBrush="#26FFFFFF" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Margin="24,18,14,6" Background="Transparent" MouseLeftButtonDown="Title_Down">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Assets/cato.png" Width="46" Height="46" Margin="-6,0,8,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Cato" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                        <TextBlock Text="Configuración · los cambios se aplican al momento" Style="{StaticResource Small}"/>
+                    </StackPanel>
+                </StackPanel>
+                <Button Style="{StaticResource IconBtn}" Content="&#xE8BB;" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Top" Click="Close_Click"/>
+            </Grid>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" Padding="24,0,24,24">
+                <StackPanel x:Name="Body"/>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>

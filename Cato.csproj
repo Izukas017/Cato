@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 10.0.19041 TFM exposes the WinRT media session API (Windows.Media.Control) -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Cato</AssemblyName>
+    <RootNamespace>Cato</RootNamespace>
+    <ApplicationIcon>Assets\cato.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\cato.ico" />
+    <Resource Include="Assets\cato.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.2" />
+    <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="11.0.0" />
+    <PackageReference Include="System.Management" Version="11.0.0" />
+  </ItemGroup>
+</Project>
