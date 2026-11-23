@@ -1,0 +1,269 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Cato.NotchWindow"
+        Title="Cato" Width="760" Height="240"
+        SystemDecorations="None" TransparencyLevelHint="Transparent" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" CanResize="False" ShowActivated="False"
+        WindowStartupLocation="Manual">
+
+    <Grid x:Name="Root" VerticalAlignment="Top" HorizontalAlignment="Center" ColumnDefinitions="Auto,Auto,Auto">
+        <!-- "orejas" cóncavas que funden el notch con el borde superior -->
+        <Path x:Name="EarL" Grid.Column="0" VerticalAlignment="Top" Fill="Black" Data="M0,0 L16,0 L16,16 A16,16 0 0 0 0,0 Z"/>
+        <Path x:Name="EarR" Grid.Column="2" VerticalAlignment="Top" Fill="Black" Data="M16,0 L0,0 L0,16 A16,16 0 0 1 16,0 Z"/>
+
+        <Border x:Name="Notch" Grid.Column="1" Width="200" Height="38" Background="Black" CornerRadius="0,0,18,18" ClipToBounds="True">
+            <Panel>
+                <!-- fundido de color en la parte de abajo -->
+                <Border x:Name="Glow" IsHitTestVisible="False" Opacity="0">
+                    <Border.OpacityMask>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                            <GradientStop Color="#00000000" Offset="0.2"/>
+                            <GradientStop Color="#66000000" Offset="0.65"/>
+                            <GradientStop Color="#FF000000" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.OpacityMask>
+                </Border>
+
+                <!-- ===== Cerrado: anillo · hora · onda ===== -->
+                <Grid x:Name="ClosedView" Margin="16,0" ColumnDefinitions="Auto,*,Auto">
+                    <Panel Width="18" Height="18" VerticalAlignment="Center">
+                        <Ellipse Stroke="#33FFFFFF" StrokeThickness="3"/>
+                        <Path x:Name="Ring" Stroke="#30D158" StrokeThickness="3" StrokeLineCap="Round"/>
+                    </Panel>
+                    <TextBlock x:Name="Clock" Grid.Column="1" FontSize="17" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <StackPanel x:Name="Wave" Grid.Column="2" Orientation="Horizontal" Spacing="3" Height="18" VerticalAlignment="Center">
+                        <Rectangle Width="3" Height="4" RadiusX="1.5" RadiusY="1.5" Fill="White" VerticalAlignment="Center"/>
+                        <Rectangle Width="3" Height="4" RadiusX="1.5" RadiusY="1.5" Fill="White" VerticalAlignment="Center"/>
+                        <Rectangle Width="3" Height="4" RadiusX="1.5" RadiusY="1.5" Fill="White" VerticalAlignment="Center"/>
+                        <Rectangle Width="3" Height="4" RadiusX="1.5" RadiusY="1.5" Fill="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ===== Aviso compacto ===== -->
+                <Grid x:Name="AlertView" IsVisible="False" Opacity="0" Margin="14,0,20,0" ColumnDefinitions="Auto,*,Auto">
+                    <Panel Width="34" Height="34" VerticalAlignment="Center">
+                        <Ellipse x:Name="AlertIconBg" Fill="#30D158"/>
+                        <PathIcon x:Name="AlertIcon" Width="16" Height="16"/>
+                    </Panel>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="AlertTitle" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="AlertSub" Classes="small" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock x:Name="AlertValue" Grid.Column="2" FontSize="24" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- ===== Abierto: cabecera + páginas ===== -->
+                <Grid x:Name="ExpandedView" IsVisible="False" Opacity="0" Margin="18,9,18,6" RowDefinitions="Auto,*,Auto">
+                    <Grid ColumnDefinitions="*,Auto,*">
+                        <TextBlock x:Name="PageTitle" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="34,0,0,0"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Panel Width="12" Height="12">
+                                <Ellipse Stroke="#33FFFFFF" StrokeThickness="2"/>
+                                <Path x:Name="HeaderRing" Stroke="#30D158" StrokeThickness="2" StrokeLineCap="Round"/>
+                            </Panel>
+                            <TextBlock x:Name="HeaderDate" FontSize="12"/>
+                            <TextBlock x:Name="HeaderTime" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,34,0" Spacing="8">
+                            <Button Classes="icon" Padding="3" Click="Settings_Click" ToolTip.Tip="Configuración">
+                                <PathIcon Data="{StaticResource IcCog}" Width="12" Height="12"/>
+                            </Button>
+                            <StackPanel x:Name="HeaderWave" Orientation="Horizontal" Spacing="2" Height="14" VerticalAlignment="Center">
+                                <Rectangle Width="2.5" Height="3" RadiusX="1.2" RadiusY="1.2" Fill="White" VerticalAlignment="Center"/>
+                                <Rectangle Width="2.5" Height="3" RadiusX="1.2" RadiusY="1.2" Fill="White" VerticalAlignment="Center"/>
+                                <Rectangle Width="2.5" Height="3" RadiusX="1.2" RadiusY="1.2" Fill="White" VerticalAlignment="Center"/>
+                                <Rectangle Width="2.5" Height="3" RadiusX="1.2" RadiusY="1.2" Fill="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,3,0,0" ColumnDefinitions="Auto,*,Auto">
+                        <Button Classes="circle" Click="PrevPage_Click"><PathIcon Data="{StaticResource IcLeft}" Width="12" Height="12"/></Button>
+                        <Button Grid.Column="2" Classes="circle" Click="NextPage_Click"><PathIcon Data="{StaticResource IcRight}" Width="12" Height="12"/></Button>
+                        <Panel x:Name="Pages" Grid.Column="1" Margin="12,0" ClipToBounds="True">
+
+                            <!-- Música -->
+                            <Grid x:Name="PageMusic" VerticalAlignment="Center" ColumnDefinitions="Auto,*">
+                                <Border x:Name="ArtBox" Width="78" Height="78" CornerRadius="13" Background="#26FFFFFF" ClipToBounds="True" VerticalAlignment="Center">
+                                    <Panel>
+                                        <PathIcon x:Name="ArtGlyph" Data="{StaticResource IcMusic}" Width="26" Height="26"/>
+                                        <Image x:Name="Art" Stretch="UniformToFill"/>
+                                    </Panel>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="MediaTitle" Text="Nada sonando" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="MediaArtist" Classes="small" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock x:Name="LyricLine" FontSize="12" Foreground="#30D158" TextTrimming="CharacterEllipsis" IsVisible="False"/>
+                                    <Grid Margin="0,7,0,0" ColumnDefinitions="Auto,*,Auto">
+                                        <TextBlock x:Name="Elapsed" FontSize="12" Text="0:00" MinWidth="34"/>
+                                        <ProgressBar x:Name="MediaProgress" Grid.Column="1" Classes="thin" Margin="6,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="Remaining" Grid.Column="2" Classes="small" FontSize="12" Text="-0:00" MinWidth="38" TextAlignment="Right"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,2,0,0">
+                                        <Button Classes="icon" Click="Prev_Click"><PathIcon Data="{StaticResource IcPrev}" Width="16" Height="16"/></Button>
+                                        <Button Classes="icon" Click="Play_Click"><PathIcon x:Name="PlayIcon" Data="{StaticResource IcPlay}" Width="18" Height="18"/></Button>
+                                        <Button Classes="icon" Click="Next_Click"><PathIcon Data="{StaticResource IcNext}" Width="16" Height="16"/></Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Pomodoro -->
+                            <Grid x:Name="PagePomo" IsVisible="False" VerticalAlignment="Center" ColumnDefinitions="*,1.3*">
+                                <StackPanel>
+                                    <TextBlock x:Name="PomoPhase" Classes="small"/>
+                                    <TextBlock x:Name="TimerText" FontSize="28" FontWeight="Bold"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock x:Name="PomoEnd" FontSize="12" FontWeight="Bold"/>
+                                        <TextBlock Text="hasta terminar" Foreground="#8B7CF6" FontSize="12"/>
+                                    </StackPanel>
+                                    <ProgressBar x:Name="PomoPhaseBar" Classes="thin" Foreground="#8B7CF6" Margin="0,6,24,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Esta ronda" Classes="small" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                            <Button x:Name="StartBtn" Classes="pill" Background="#E6FFFFFF" Foreground="Black" FontWeight="SemiBold" Click="StartPause_Click"/>
+                                            <Button Classes="icon" Padding="4" Click="Reset_Click" ToolTip.Tip="Reiniciar"><PathIcon Data="{StaticResource IcRefresh}" Width="13" Height="13"/></Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Canvas x:Name="RoundTrack" Height="32" Margin="0,8,0,0"/>
+                                    <TextBlock x:Name="PomoTotal" Classes="small" FontSize="10"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Día y tiempo -->
+                            <Grid x:Name="PageDay" IsVisible="False" VerticalAlignment="Center" ColumnDefinitions="*,1.3*">
+                                <StackPanel Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock x:Name="WeatherGlyph" FontSize="21" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="WeatherTemp" FontSize="25" FontWeight="Bold"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="WeatherDesc" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,7,0,0">
+                                        <TextBlock x:Name="DayPhase" FontSize="12" FontWeight="Bold"/>
+                                        <TextBlock x:Name="DayNext" Foreground="#0A84FF" FontSize="12"/>
+                                    </StackPanel>
+                                    <ProgressBar x:Name="DayBar" Classes="thin" Foreground="#0A84FF" Margin="0,5,14,0"/>
+                                </StackPanel>
+                                <Canvas x:Name="SunArc" Grid.Column="1" Height="84"/>
+                            </Grid>
+
+                            <!-- Agua -->
+                            <Grid x:Name="PageWater" IsVisible="False" VerticalAlignment="Center" ColumnDefinitions="*,*">
+                                <StackPanel Margin="0,0,14,0">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock x:Name="WaterAmount" FontSize="25" FontWeight="Bold"/>
+                                            <TextBlock x:Name="WaterGoalText" Classes="small" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="WaterRemind" Grid.Column="1" OnContent="" OffContent="" MinWidth="0" ToolTip.Tip="Recordatorios"/>
+                                    </Grid>
+                                    <TextBlock x:Name="WaterStatus" Classes="small"/>
+                                    <ProgressBar x:Name="WaterBar" Classes="thin" Foreground="#0A84FF" Margin="0,5,0,0"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                                        <Button x:Name="DrinkBtn" Classes="pill" Background="#0A84FF" Click="Drink_Click"/>
+                                        <Button Classes="pill" Content="Meta" Click="WaterGoal_Click"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Canvas x:Name="WaterChart" Grid.Column="1" Height="84"/>
+                            </Grid>
+
+                            <!-- Bandeja -->
+                            <Panel x:Name="PageShelf" IsVisible="False">
+                                <Border x:Name="DropZone" BorderBrush="#40FFFFFF" BorderThickness="1" CornerRadius="12" Background="Transparent"/>
+                                <StackPanel x:Name="DropHint" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                    <PathIcon Data="{StaticResource IcTray}" Width="20" Height="20"/>
+                                    <TextBlock x:Name="DropText" Text="Suelta archivos aquí" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Arrástralos fuera cuando quieras · clic para abrir" Classes="small" FontSize="10" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <ScrollViewer x:Name="ShelfScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" IsVisible="False">
+                                    <StackPanel x:Name="ShelfList" Orientation="Horizontal" Spacing="4"/>
+                                </ScrollViewer>
+                                <Button x:Name="ClearShelfBtn" Classes="pill" Content="Vaciar" FontSize="10" Padding="8,1" HorizontalAlignment="Right" VerticalAlignment="Top" IsVisible="False" Click="ClearShelf_Click"/>
+                            </Panel>
+
+                            <!-- Portapapeles -->
+                            <Grid x:Name="PageClip" IsVisible="False" RowDefinitions="*,Auto">
+                                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                    <StackPanel x:Name="ClipList" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"/>
+                                </ScrollViewer>
+                                <TextBlock x:Name="ClipEmpty" Text="Copia texto y aparecerá aquí" Classes="small" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ClipCount" Grid.Row="1" Classes="small" FontSize="10" Margin="2,2,0,0"/>
+                            </Grid>
+
+                            <!-- Tareas -->
+                            <Grid x:Name="PageTodo" IsVisible="False" ColumnDefinitions="150,*">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="TodoCount" FontSize="27" FontWeight="Bold"/>
+                                    <TextBlock Text="Tareas hechas hoy" Classes="small"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                                        <Button Classes="pill" Content="+ Añadir" Click="AddTask_Click"/>
+                                        <Button x:Name="EditTasksBtn" Classes="pill" Content="Editar" Click="EditTasks_Click"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                                    <TextBox x:Name="TaskInput" IsVisible="False" Watermark="Tarea… (añade @18:30 para un recordatorio)" FontSize="12" Margin="0,0,0,4"/>
+                                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel x:Name="TodoList" Spacing="2"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Widgets -->
+                            <Grid x:Name="PageWidgets" IsVisible="False" VerticalAlignment="Center" ColumnDefinitions="*,*">
+                                <Border Background="#17FFFFFF" CornerRadius="12" Padding="10,5" Margin="0,0,5,0">
+                                    <StackPanel>
+                                        <TextBlock Text="ESTA SEMANA" Classes="small" FontSize="9" FontWeight="Bold"/>
+                                        <Grid x:Name="WeekGrid" Margin="0,3,0,0"/>
+                                        <TextBlock x:Name="WeekTasks" FontSize="11" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Background="#17FFFFFF" CornerRadius="12" Padding="10,5" Margin="5,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock x:Name="SysLabel" Classes="small" FontSize="9" FontWeight="Bold"/>
+                                        <Grid Margin="0,3,0,0" ColumnDefinitions="Auto,*">
+                                            <Panel Width="44" Height="44">
+                                                <Ellipse Stroke="#33FFFFFF" StrokeThickness="4"/>
+                                                <Path x:Name="SysRing" Stroke="#30D158" StrokeThickness="4" StrokeLineCap="Round"/>
+                                                <PathIcon x:Name="SysIcon" Width="16" Height="16"/>
+                                            </Panel>
+                                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock x:Name="SysValue" FontSize="22" FontWeight="Bold"/>
+                                                <TextBlock x:Name="SysState" Foreground="#30D158" FontSize="11"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Panel>
+                    </Grid>
+
+                    <StackPanel x:Name="Dots" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4" Margin="0,4,0,0"/>
+                </Grid>
+
+                <!-- ===== Modo juego ===== -->
+                <Grid x:Name="GameView" IsVisible="False" Opacity="0">
+                    <StackPanel x:Name="GameRow" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                        <TextBlock x:Name="GameClock" FontSize="12" FontWeight="Bold"/>
+                        <StackPanel x:Name="GCpuBox" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="CPU" Foreground="#8CFFFFFF" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="GCpu" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel x:Name="GGpuBox" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="GPU" Foreground="#8CFFFFFF" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="GGpu" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel x:Name="GRamBox" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="RAM" Foreground="#8CFFFFFF" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="GRam" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel x:Name="GVramBox" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="VRAM" Foreground="#8CFFFFFF" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="GVram" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Panel>
+        </Border>
+    </Grid>
+</Window>

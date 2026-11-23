@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.Izukas017.Cato</id>
+  <name>Cato</name>
+  <summary>Notch dinámico: música, Pomodoro, tiempo, tareas y más</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <developer id="io.github.Izukas017"><name>Izukas017</name></developer>
+  <description>
+    <p>Un notch en la parte de arriba de la pantalla con música y letras, Pomodoro, fases del día y tiempo,
+    recordatorio de agua, bandeja de archivos, portapapeles, tareas y widgets.</p>
+  </description>
+  <launchable type="desktop-id">io.github.Izukas017.Cato.desktop</launchable>
+  <url type="homepage">https://github.com/Izukas017/Cato</url>
+  <releases>
+    <release version="0.1.0" date="2026-11-23"/>
+  </releases>
+</component>

@@ -12,6 +12,11 @@
     <Product>Cato</Product>
   </PropertyGroup>
   <ItemGroup>
+    <!-- the Linux port lives in linux/ and builds on its own -->
+    <Compile Remove="linux\**;artifacts\**" />
+    <None Remove="linux\**;artifacts\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="Assets\cato.ico" />
     <Resource Include="Assets\cato.png" />
   </ItemGroup>

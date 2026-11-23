@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Cato
+Comment=Notch dinámico: música, Pomodoro, tiempo, tareas y más
+Exec=cato
+Icon=io.github.Izukas017.Cato
+Categories=Utility;
+Terminal=false
+StartupNotify=false

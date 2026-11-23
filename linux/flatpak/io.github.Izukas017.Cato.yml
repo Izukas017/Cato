@@ -1,0 +1,41 @@
+# Flatpak de Cato para Linux.
+#   flatpak-builder --force-clean --repo=repo build linux/flatpak/io.github.Izukas017.Cato.yml
+#   flatpak build-bundle repo Cato-0.1.0-x86_64.flatpak io.github.Izukas017.Cato \
+#       --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+app-id: io.github.Izukas017.Cato
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.dotnet10
+command: cato
+finish-args:
+  - --share=ipc
+  - --socket=x11            # the notch is an X11 dock window (works under XWayland too)
+  - --device=dri
+  - --share=network         # lyrics (lrclib.net) and weather (open-meteo.com)
+  - --talk-name=org.mpris.MediaPlayer2.*   # music from any player
+  - --filesystem=home       # files dropped on / dragged out of the shelf
+  - --filesystem=xdg-config/autostart:create   # "Iniciar con la sesión"
+build-options:
+  append-path: /usr/lib/sdk/dotnet10/bin
+  append-ld-library-path: /usr/lib/sdk/dotnet10/lib
+  env:
+    DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+    DOTNET_NOLOGO: '1'
+  # shortcut: restores NuGet packages online; Flathub needs generated nuget-sources.json instead
+  build-args:
+    - --share=network
+modules:
+  - name: cato
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ../..
+        skip: [bin, obj, artifacts, .git, linux/Cato.Linux/bin, linux/Cato.Linux/obj]
+    build-commands:
+      - dotnet publish linux/Cato.Linux/Cato.Linux.csproj -c Release -r linux-x64 --self-contained true -p:DebugType=none -o /app/lib/cato
+      - mkdir -p /app/bin && printf '#!/bin/sh\nexec /app/lib/cato/Cato "$@"\n' > /app/bin/cato && chmod 755 /app/bin/cato
+      - install -Dm644 linux/flatpak/io.github.Izukas017.Cato.desktop /app/share/applications/io.github.Izukas017.Cato.desktop
+      - install -Dm644 linux/flatpak/io.github.Izukas017.Cato.metainfo.xml /app/share/metainfo/io.github.Izukas017.Cato.metainfo.xml
+      - install -Dm644 Assets/cato.png /app/share/icons/hicolor/512x512/apps/io.github.Izukas017.Cato.png

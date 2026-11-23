@@ -17,6 +17,33 @@ Se instala solo para tu usuario, sin permisos de administrador, en `%LOCALAPPDAT
 
 **Requisitos:** Windows 10 (versión 2004 o posterior) u 11, de 64 bits.
 
+### Linux
+
+En [**Releases**](https://github.com/Izukas017/Cato/releases/latest) hay dos opciones (64 bits, x86_64):
+
+**Flatpak** (recomendado):
+
+```bash
+flatpak install --user ./Cato-0.1.0-x86_64.flatpak
+flatpak run io.github.Izukas017.Cato
+```
+
+Si no tienes Flathub configurado, Flatpak lo añade para descargar el runtime `org.freedesktop.Platform 25.08`.
+
+**Instalación normal** (sin Flatpak, solo para tu usuario, sin `sudo`):
+
+```bash
+tar -xzf Cato-0.1.0-linux-x64.tar.gz
+cd cato-0.1.0
+./install.sh        # para quitarlo: ./uninstall.sh
+```
+
+Queda en `~/.local/share/cato`, con entrada en el menú y el comando `cato`.
+
+Funciona en sesiones **X11** y **Wayland** (a través de XWayland, que GNOME y KDE traen por defecto).
+En Wayland los atajos se registran con el portal de atajos globales del escritorio (GNOME 48+, KDE Plasma 6), que puede pedirte confirmarlos la primera vez.
+Si tu escritorio no lo admite, crea los atajos tú con `cato --toggle` y `cato --game` (o `flatpak run io.github.Izukas017.Cato --toggle` / `--game`).
+
 ### Actualizar
 
 Descarga el instalador de la nueva versión y ejecútalo: cierra Cato si está abierto y lo sustituye. Tus ajustes se conservan.
@@ -56,6 +83,8 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 
 Windows solo deja medir los FPS de otro programa si Cato se ejecuta como **administrador**. En *Configuración → Atajos y modo juego* tienes el botón **Reiniciar como administrador**. Sin eso, el modo juego muestra el resto de datos. Se miden los juegos DirectX.
 
+En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS no están disponibles.
+
 ## Privacidad
 
 Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para:
@@ -66,6 +95,8 @@ Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para
 El portapapeles y la bandeja solo se guardan en memoria mientras Cato está abierto.
 
 ## Compilar desde el código
+
+La versión de Windows está en la raíz (WPF) y la de Linux en `linux/Cato.Linux` (Avalonia); comparten la lógica (`Logic.cs`, `Store.cs`).
 
 Necesitas el [SDK de .NET 10](https://dotnet.microsoft.com/download).
 
@@ -83,3 +114,12 @@ dotnet publish -c Release -r win-x64 --self-contained true -o artifacts\publish
 ```
 
 El instalador queda en `artifacts\CatoSetup-<versión>.exe`.
+
+En Linux (con el SDK de .NET 10, y `flatpak-builder` para el Flatpak):
+
+```bash
+dotnet run --project linux/Cato.Linux                       # ejecutar
+sh linux/install/make-tarball.sh                            # artifacts/Cato-<versión>-linux-x64.tar.gz
+flatpak-builder --force-clean --repo=repo build linux/flatpak/io.github.Izukas017.Cato.yml
+flatpak build-bundle repo Cato-0.1.0-x86_64.flatpak io.github.Izukas017.Cato --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+```

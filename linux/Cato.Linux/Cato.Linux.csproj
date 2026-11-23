@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Cato for Linux: Avalonia port of the Windows (WPF) app. Shares the pure logic with it. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Cato</AssemblyName>
+    <RootNamespace>Cato</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>Cato</Product>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Logic.cs" Link="Shared\Logic.cs" />
+    <Compile Include="..\..\Store.cs" Link="Shared\Store.cs" />
+    <AvaloniaResource Include="..\..\Assets\cato.png" Link="Assets\cato.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.23" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.23" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.23" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.23" />
+    <PackageReference Include="Tmds.DBus" Version="0.95.2" />
+  </ItemGroup>
+</Project>

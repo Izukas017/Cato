@@ -202,14 +202,7 @@ public partial class MainWindow
         if (!Notch.IsMouseOver) GoTo(Mode.Closed);
     }
 
-    /// "Llamar a Ana @18:30" → ("Llamar a Ana", "18:30")
-    internal static (string Text, string? At) ParseTask(string s)
-    {
-        var m = Regex.Match(s.Trim(), @"^(.*?)\s*@\s*(\d{1,2}):(\d{2})$");
-        if (m.Success && int.Parse(m.Groups[2].Value) < 24 && int.Parse(m.Groups[3].Value) < 60)
-            return (m.Groups[1].Value.Trim(), $"{int.Parse(m.Groups[2].Value):00}:{m.Groups[3].Value}");
-        return (s.Trim(), null);
-    }
+    internal static (string Text, string? At) ParseTask(string s) => TaskText.Parse(s);
 
     void TodoList_Click(object s, MouseButtonEventArgs e)
     {
