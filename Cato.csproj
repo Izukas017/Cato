@@ -8,6 +8,8 @@
     <AssemblyName>Cato</AssemblyName>
     <RootNamespace>Cato</RootNamespace>
     <ApplicationIcon>Assets\cato.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <Product>Cato</Product>
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets\cato.ico" />
