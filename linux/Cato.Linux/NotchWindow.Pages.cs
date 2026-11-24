@@ -23,7 +23,7 @@ public partial class NotchWindow
     static HttpClient CreateHttp()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.2 (Linux)");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.3 (Linux)");
         return h;
     }
 

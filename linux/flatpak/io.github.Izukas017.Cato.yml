@@ -1,6 +1,6 @@
 # Flatpak de Cato para Linux.
 #   flatpak-builder --force-clean --repo=repo build linux/flatpak/io.github.Izukas017.Cato.yml
-#   flatpak build-bundle repo Cato-0.2.0-x86_64.flatpak io.github.Izukas017.Cato \
+#   flatpak build-bundle repo Cato-0.3.0-x86_64.flatpak io.github.Izukas017.Cato \
 #       --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
 app-id: io.github.Izukas017.Cato
 runtime: org.freedesktop.Platform
