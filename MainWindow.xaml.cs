@@ -9,7 +9,7 @@ enum Mode { Closed, Alert, Expanded, Lyrics, Game }
 public partial class MainWindow : Window
 {
     internal static readonly CultureInfo Es = new("es-ES");
-    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets" };
+    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal" };
     static readonly Brush GreenB = Hex("#30D158"), BlueB = Hex("#0A84FF"), PurpleB = Hex("#8B7CF6"),
         DimB = Hex("#8CFFFFFF"), FaintB = Hex("#59FFFFFF"), CardB = Hex("#17FFFFFF"), TrackB = Hex("#33FFFFFF");
     const int WM_CLIPBOARDUPDATE = 0x031D;
@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         SelfCheck.Run();
         InitializeComponent();
         Notch.Background = EarLFill.Fill = EarRFill.Fill = notchBrush;
-        pages = new[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets };
+        pages = new[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, PageTerm };
         // the "Rezo" page became "Día y tiempo"; keep the user's order/visibility for it
         for (int i = 0; i < data.PageOrder.Count; i++) if (data.PageOrder[i] == "Rezo") data.PageOrder[i] = PageNames[2];
         for (int i = 0; i < data.HiddenPages.Count; i++) if (data.HiddenPages[i] == "Rezo") data.HiddenPages[i] = PageNames[2];
@@ -403,7 +403,7 @@ public partial class MainWindow : Window
     readonly DispatcherTimer graceTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     DateTime? outsideSince;
 
-    bool KeepOpen() => pinned || Notch.ContextMenu?.IsOpen == true || TaskInput.IsKeyboardFocusWithin;
+    bool KeepOpen() => pinned || Notch.ContextMenu?.IsOpen == true || TaskInput.IsKeyboardFocusWithin || TermIn.IsKeyboardFocusWithin;
 
     void Notch_MouseLeave(object s, MouseEventArgs e)
     {
@@ -539,6 +539,7 @@ public partial class MainWindow : Window
             case 5: SetTitle("Portapapeles"); UpdateClip(); break;
             case 6: SetTitle("Tareas", "de hoy", GreenB); UpdateTodo(); break;
             case 7: SetTitle("Widgets"); UpdateWidgets(); break;
+            case 8: SetTitle("Terminal", FpsCounter.IsAdmin ? "administrador" : "usuario", FpsCounter.IsAdmin ? OrangeB : DimB); UpdateTermPrompt(); break;
         }
     }
 

@@ -75,6 +75,7 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 - **Portapapeles:** los últimos textos copiados, a un clic.
 - **Tareas:** lista del día con recordatorios (`Llamar a Ana @18:30`).
 - **Widgets:** la semana y la batería (o la memoria en un PC de sobremesa).
+- **Terminal:** una sesión de PowerShell dentro del notch (Intro ejecuta, Esc cancela, ↑↓ historial). Se ejecuta con los permisos de Cato: como administrador si Cato lo está, y como usuario normal si no. No admite programas interactivos.
 - **Avisos:** volumen y brillo, cargador, auriculares, agua, tareas y Pomodoro.
 - **WhatsApp:** los mensajes de WhatsApp Desktop salen en el notch, que se ensancha un poco y crece hasta 4 líneas de texto. Haz clic en el aviso para abrir WhatsApp; cuánto tarda en cerrarse se elige en *Configuración → Comportamiento*.
 - **Modo juego** con métricas del sistema.

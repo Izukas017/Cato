@@ -342,6 +342,26 @@
                                 </Grid>
                             </Grid>
 
+                            <!-- Terminal: PowerShell dentro del notch; hereda los permisos de Cato -->
+                            <Grid x:Name="PageTerm" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBox x:Name="TermOut" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Hidden" Background="#17FFFFFF"
+                                         Foreground="White" BorderThickness="0" Padding="8,4" Margin="0,0,0,4" FontFamily="Cascadia Mono, Consolas" FontSize="11"/>
+                                <Grid Grid.Row="1" Background="#1FFFFFFF">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="TermPrompt" Foreground="#8CFFFFFF" FontFamily="Cascadia Mono, Consolas" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                                    <TextBox x:Name="TermIn" Grid.Column="1" Background="Transparent" Foreground="White" CaretBrush="White" BorderThickness="0" Padding="6,4"
+                                             FontFamily="Cascadia Mono, Consolas" FontSize="11" KeyDown="TermIn_KeyDown" PreviewMouseDown="TermIn_Focus"
+                                             ToolTip="Intro ejecuta · Esc cancela · ↑↓ historial"/>
+                                </Grid>
+                            </Grid>
+
                             <!-- Widgets -->
                             <Grid x:Name="PageWidgets" Visibility="Collapsed" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
