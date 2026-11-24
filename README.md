@@ -85,6 +85,15 @@ Windows solo deja medir los FPS de otro programa si Cato se ejecuta como **admin
 
 En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS no están disponibles.
 
+### Aviso cuando Claude Code termina
+
+`Cato.exe --notify "Tarea terminada"` muestra un aviso en el notch de la instancia abierta (no abre otro). Para que Claude Code lo lance al acabar, añade un hook `Stop` en `~/.claude/settings.json`:
+
+```json
+{ "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "\"%LOCALAPPDATA%\\Programs\\Cato\\Cato.exe\" --notify \"Claude terminó\"" } ] } ] } }
+```
+
+(Solo Windows por ahora.)
 ## Privacidad
 
 Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para:
