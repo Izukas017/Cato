@@ -67,7 +67,7 @@ public partial class MainWindow : Window
         if (!Native.StartKeyHook(OnShortcut))
             ShowAlert("", FaintB, "Atajos no disponibles", "Windows no dejó escuchar el teclado");
         ChatNotifications.Start(
-            (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: OpenWhatsApp),
+            (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: OpenWhatsApp, image: WhatsAppIcon),
             () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
         Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text)));
         StartAudio();
@@ -88,7 +88,7 @@ public partial class MainWindow : Window
         if (int.TryParse(arg, out var p)) { page = p; foreach (var pg in pages) pg.Visibility = pg == pages[p] ? Visibility.Visible : Visibility.Collapsed; GoTo(Mode.Expanded); }
         else if (arg == "lyrics") { lyricsMode = true; GoTo(Mode.Lyrics); }
         else if (arg == "alert") ShowAlert("", GreenB, "Cargando", "Cargador conectado", "70%");
-        else if (arg == "message") ShowAlert("", GreenB, "Ana García", "¿Cenamos hoy en el sitio de siempre? Si te va bien quedamos a las 21:00 y reservo mesa para los cuatro, avísame cuando puedas porque el restaurante cierra la cocina pronto.", message: true);
+        else if (arg == "message") ShowAlert("", GreenB, "Ana García", "¿Cenamos hoy en el sitio de siempre? Si te va bien quedamos a las 21:00 y reservo mesa para los cuatro, avísame cuando puedas porque el restaurante cierra la cocina pronto.", message: true, image: WhatsAppIcon);
         else if (arg == "settings") Settings_Click(this, new RoutedEventArgs());
         else if (arg == "game") ToggleGame();
         if (Environment.GetCommandLineArgs().Contains("--openclose")) // dev: open/close in a loop to film the morph
@@ -568,6 +568,7 @@ public partial class MainWindow : Window
 
     /// `message`: wider and taller, the text wraps (up to 4 lines) and stays longer. Used for chat messages.
     Action? alertClick;
+    static readonly ImageSource WhatsAppIcon = new BitmapImage(new Uri("pack://application:,,,/Assets/whatsapp.png"));
 
     void Notch_Click(object s, MouseButtonEventArgs e)
     {
@@ -586,13 +587,16 @@ public partial class MainWindow : Window
 
     /// `message`: wider and taller, the text wraps (up to 4 lines) and stays `MessageSecs`. Used for chat messages.
     /// `onClick`: clicking the alert runs it and closes the notch.
-    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "", bool message = false, Action? onClick = null)
+    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "", bool message = false, Action? onClick = null, ImageSource? image = null)
     {
         if (mode is Mode.Expanded or Mode.Lyrics or Mode.Game || notchHidden || morphing) return; // looking at it, gaming or hidden
         alertClick = onClick;
         Notch.Cursor = onClick == null ? null : Cursors.Hand;
         AlertIcon.Text = glyph;
         AlertIconBg.Fill = bg;
+        AlertImage.Source = image;
+        AlertImage.Visibility = image == null ? Visibility.Collapsed : Visibility.Visible;
+        AlertIcon.Visibility = AlertIconBg.Visibility = image == null ? Visibility.Visible : Visibility.Collapsed;
         AlertTitle.Text = title;
         AlertSub.TextWrapping = message ? TextWrapping.Wrap : TextWrapping.NoWrap;
         AlertSub.LineHeight = message ? 15 : double.NaN;

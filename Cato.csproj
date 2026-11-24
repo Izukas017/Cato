@@ -19,6 +19,7 @@
   <ItemGroup>
     <Resource Include="Assets\cato.ico" />
     <Resource Include="Assets\cato.png" />
+    <Resource Include="Assets\whatsapp.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.2" />

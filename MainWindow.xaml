@@ -83,6 +83,9 @@
                     <Grid Width="34" Height="34" VerticalAlignment="Center">
                         <Ellipse x:Name="AlertIconBg" Fill="{StaticResource Green}"/>
                         <TextBlock x:Name="AlertIcon" Style="{StaticResource Icon}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Image x:Name="AlertImage" Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.Clip><RectangleGeometry Rect="0,0,34,34" RadiusX="9" RadiusY="9"/></Image.Clip>
+                        </Image>
                     </Grid>
                     <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
                         <TextBlock x:Name="AlertTitle" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
