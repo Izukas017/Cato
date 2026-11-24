@@ -67,9 +67,9 @@ public partial class MainWindow : Window
         if (!Native.StartKeyHook(OnShortcut))
             ShowAlert("", FaintB, "Atajos no disponibles", "Windows no dejó escuchar el teclado");
         ChatNotifications.Start(
-            (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: OpenWhatsApp, image: WhatsAppIcon),
+            (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: () => OpenApp("whatsapp://"), image: WhatsAppIcon),
             () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
-        Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text)));
+        Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon)));
         StartAudio();
         StartBrightnessWatch();
         await StartMedia();
@@ -89,6 +89,7 @@ public partial class MainWindow : Window
         else if (arg == "lyrics") { lyricsMode = true; GoTo(Mode.Lyrics); }
         else if (arg == "alert") ShowAlert("", GreenB, "Cargando", "Cargador conectado", "70%");
         else if (arg == "message") ShowAlert("", GreenB, "Ana García", "¿Cenamos hoy en el sitio de siempre? Si te va bien quedamos a las 21:00 y reservo mesa para los cuatro, avísame cuando puedas porque el restaurante cierra la cocina pronto.", message: true, image: WhatsAppIcon);
+        else if (arg == "claude") ShowAlert("", GreenB, "Claude terminó", "Tarea terminada", onClick: () => OpenApp("claude://"), image: ClaudeIcon);
         else if (arg == "settings") Settings_Click(this, new RoutedEventArgs());
         else if (arg == "game") ToggleGame();
         if (Environment.GetCommandLineArgs().Contains("--openclose")) // dev: open/close in a loop to film the morph
@@ -569,6 +570,7 @@ public partial class MainWindow : Window
     /// `message`: wider and taller, the text wraps (up to 4 lines) and stays longer. Used for chat messages.
     Action? alertClick;
     static readonly ImageSource WhatsAppIcon = new BitmapImage(new Uri("pack://application:,,,/Assets/whatsapp.png"));
+    static readonly ImageSource ClaudeIcon = new BitmapImage(new Uri("pack://application:,,,/Assets/claude.png"));
 
     void Notch_Click(object s, MouseButtonEventArgs e)
     {
@@ -579,9 +581,9 @@ public partial class MainWindow : Window
         GoTo(Mode.Closed);
     }
 
-    static void OpenWhatsApp()
+    static void OpenApp(string uri)
     {
-        try { Process.Start(new ProcessStartInfo("whatsapp://") { UseShellExecute = true }); }
+        try { Native.AllowSetForegroundWindow(-1); Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true }); } // -1 = ASFW_ANY
         catch (System.ComponentModel.Win32Exception ex) { Debug.WriteLine(ex); } // not installed
     }
 

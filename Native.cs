@@ -5,6 +5,9 @@ namespace Cato;
 
 static class Native
 {
+    /// Lets the app we launch bring its window to the front (Windows blocks it otherwise).
+    [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int processId);
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool AddClipboardFormatListener(IntPtr hwnd);
 

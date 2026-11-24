@@ -88,7 +88,7 @@ En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS
 
 ### Aviso cuando Claude Code termina
 
-`Cato.exe --notify "Tarea terminada"` muestra un aviso en el notch de la instancia abierta (no abre otro). Para que Claude Code lo lance al acabar, añade un hook `Stop` en `~/.claude/settings.json`:
+`Cato.exe --notify "Tarea terminada"` muestra un aviso con el logo de Claude en el notch de la instancia abierta (no abre otro); al hacer clic en él se abre Claude. Para que Claude Code lo lance al acabar, añade un hook `Stop` en `~/.claude/settings.json`:
 
 ```json
 { "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "\"%LOCALAPPDATA%\\Programs\\Cato\\Cato.exe\" --notify \"Claude terminó\"" } ] } ] } }
