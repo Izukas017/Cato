@@ -184,7 +184,7 @@ public partial class MainWindow
     {
         if (e.Key == Key.Escape) { CloseTaskInput(); return; }
         if (e.Key != Key.Enter) return;
-        var (text, at) = ParseTask(TaskInput.Text);
+        var (text, at) = TaskText.Parse(TaskInput.Text);
         if (text != "")
         {
             data.Todos.Add(new TodoItem { Text = text, At = at, Day = Today });
@@ -201,8 +201,6 @@ public partial class MainWindow
         Keyboard.ClearFocus();
         if (!Notch.IsMouseOver) GoTo(Mode.Closed);
     }
-
-    internal static (string Text, string? At) ParseTask(string s) => TaskText.Parse(s);
 
     void TodoList_Click(object s, MouseButtonEventArgs e)
     {

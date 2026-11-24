@@ -164,7 +164,7 @@ static class TaskText
     /// "Llamar a Ana @18:30" → ("Llamar a Ana", "18:30")
     public static (string Text, string? At) Parse(string s)
     {
-        var m = Regex.Match(s.Trim(), @"^(.*?)\s*@\s*(\d{1,2}):(\d{2})$");
+        var m = Regex.Match(s.Trim(), @"^(.*?)\s*@\s*([0-9]{1,2}):([0-9]{2})$"); // [0-9], not \d: int.Parse rejects non-Latin digits
         if (m.Success && int.Parse(m.Groups[2].Value) < 24 && int.Parse(m.Groups[3].Value) < 60)
             return (m.Groups[1].Value.Trim(), $"{int.Parse(m.Groups[2].Value):00}:{m.Groups[3].Value}");
         return (s.Trim(), null);
@@ -198,7 +198,7 @@ static class SelfCheck
         Ensure(at.Phase == "Mañana" && at.Next == "Mediodía", "Phase " + at.Phase);
         Ensure(d.At(new DateTime(2026, 11, 23, 23, 0, 0)).Next == "Alba", "Night phase");
 
-        Ensure(TaskText.Parse("Llamar a Ana @ 9:05") == ("Llamar a Ana", "09:05") && TaskText.Parse("Comprar pan") == ("Comprar pan", null), "ParseTask");
+        Ensure(TaskText.Parse("Llamar a Ana @ 9:05") == ("Llamar a Ana", "09:05") && TaskText.Parse("Comprar pan") == ("Comprar pan", null) && TaskText.Parse("x @٩:٠٥") == ("x @٩:٠٥", null), "ParseTask");
     }
 
     static void Ensure(bool ok, string what) { if (!ok) throw new InvalidOperationException("Self-check failed: " + what); }
