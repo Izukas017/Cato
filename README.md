@@ -8,7 +8,7 @@
 
 ## Instalación
 
-1. Ve a [**Releases**](https://github.com/Izukas017/Cato/releases/latest) y descarga `CatoSetup-0.1.0.exe`.
+1. Ve a [**Releases**](https://github.com/Izukas017/Cato/releases/latest) y descarga `CatoSetup-0.2.0.exe`.
 2. Ábrelo. Como el instalador todavía no está firmado, Windows puede mostrar *«Windows protegió tu PC»*: pulsa **Más información → Ejecutar de todas formas**.
 3. Sigue el asistente. Puedes elegir crear un acceso directo en el escritorio e **iniciar Cato con Windows**.
 
@@ -24,7 +24,7 @@ En [**Releases**](https://github.com/Izukas017/Cato/releases/latest) hay dos opc
 **Flatpak** (recomendado):
 
 ```bash
-flatpak install --user ./Cato-0.1.0-x86_64.flatpak
+flatpak install --user ./Cato-0.2.0-x86_64.flatpak
 flatpak run io.github.Izukas017.Cato
 ```
 
@@ -33,8 +33,8 @@ Si no tienes Flathub configurado, Flatpak lo añade para descargar el runtime `o
 **Instalación normal** (sin Flatpak, solo para tu usuario, sin `sudo`):
 
 ```bash
-tar -xzf Cato-0.1.0-linux-x64.tar.gz
-cd cato-0.1.0
+tar -xzf Cato-0.2.0-linux-x64.tar.gz
+cd cato-0.2.0
 ./install.sh        # para quitarlo: ./uninstall.sh
 ```
 
@@ -130,5 +130,5 @@ En Linux (con el SDK de .NET 10, y `flatpak-builder` para el Flatpak):
 dotnet run --project linux/Cato.Linux                       # ejecutar
 sh linux/install/make-tarball.sh                            # artifacts/Cato-<versión>-linux-x64.tar.gz
 flatpak-builder --force-clean --repo=repo build linux/flatpak/io.github.Izukas017.Cato.yml
-flatpak build-bundle repo Cato-0.1.0-x86_64.flatpak io.github.Izukas017.Cato --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak build-bundle repo Cato-0.2.0-x86_64.flatpak io.github.Izukas017.Cato --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
