@@ -66,6 +66,7 @@ public partial class MainWindow : Window
         Native.AddClipboardFormatListener(hwnd);
         if (!Native.StartKeyHook(OnShortcut))
             ShowAlert("", FaintB, "Atajos no disponibles", "Windows no dejó escuchar el teclado");
+        Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text)));
         StartAudio();
         StartBrightnessWatch();
         await StartMedia();
