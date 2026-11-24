@@ -35,6 +35,7 @@ public class Data
     // Zona de gracia: margen alrededor del notch y espera antes de cerrarse
     public int GraceZone { get; set; } = 24;
     public int GraceDelayMs { get; set; } = 300;
+    public int MessageSecs { get; set; } = 7; // how long a chat message stays in the notch
 
     // Modo juego
     public double GameOpacity { get; set; } = 0.6;

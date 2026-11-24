@@ -27,7 +27,7 @@
 
         <Border x:Name="Notch" Grid.Column="1" Width="200" Height="38"
                 Background="{StaticResource NotchBg}" CornerRadius="0,0,18,18"
-                AllowDrop="True" MouseEnter="Notch_MouseEnter" MouseLeave="Notch_MouseLeave"
+                AllowDrop="True" MouseEnter="Notch_MouseEnter" MouseLeave="Notch_MouseLeave" MouseLeftButtonUp="Notch_Click"
                 DragEnter="Notch_DragEnter" DragLeave="Notch_DragLeave" Drop="Notch_Drop" ClipToBounds="True">
             <Border.ContextMenu>
                 <ContextMenu>

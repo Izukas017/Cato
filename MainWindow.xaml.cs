@@ -66,6 +66,9 @@ public partial class MainWindow : Window
         Native.AddClipboardFormatListener(hwnd);
         if (!Native.StartKeyHook(OnShortcut))
             ShowAlert("", FaintB, "Atajos no disponibles", "Windows no dejó escuchar el teclado");
+        ChatNotifications.Start(
+            (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: OpenWhatsApp),
+            () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
         Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text)));
         StartAudio();
         StartBrightnessWatch();
@@ -85,6 +88,7 @@ public partial class MainWindow : Window
         if (int.TryParse(arg, out var p)) { page = p; foreach (var pg in pages) pg.Visibility = pg == pages[p] ? Visibility.Visible : Visibility.Collapsed; GoTo(Mode.Expanded); }
         else if (arg == "lyrics") { lyricsMode = true; GoTo(Mode.Lyrics); }
         else if (arg == "alert") ShowAlert("", GreenB, "Cargando", "Cargador conectado", "70%");
+        else if (arg == "message") ShowAlert("", GreenB, "Ana García", "¿Cenamos hoy en el sitio de siempre? Si te va bien quedamos a las 21:00 y reservo mesa para los cuatro, avísame cuando puedas porque el restaurante cierra la cocina pronto.", message: true);
         else if (arg == "settings") Settings_Click(this, new RoutedEventArgs());
         else if (arg == "game") ToggleGame();
         if (Environment.GetCommandLineArgs().Contains("--openclose")) // dev: open/close in a loop to film the morph
@@ -329,7 +333,7 @@ public partial class MainWindow : Window
     static (double W, double H, double R) SizeOf(Mode m) => m switch
     {
         Mode.Closed => (200, 38, 18),
-        Mode.Alert => (380, 62, 24),
+        Mode.Alert => (alertW, alertH, 24),
         Mode.Expanded => (580, 150, 27),
         Mode.Game => (gameWidth, 26, 13),
         _ => (680, 140, 27),
@@ -354,6 +358,7 @@ public partial class MainWindow : Window
         var from = ViewOf(mode);
         var to = ViewOf(m);
         mode = m;
+        if (m != Mode.Alert) Notch.Cursor = null;
 
         var (w, h, r) = SizeOf(m);
         var (ease, ms) = ShapeEasing();
@@ -389,6 +394,7 @@ public partial class MainWindow : Window
     {
         graceTimer.Stop();
         if (mode == Mode.Game || notchHidden || morphing) return; // game mode / hidden: never pops open under the cursor
+        if (mode == Mode.Alert && alertClick != null) return; // a clickable message: let the cursor reach it
         GoTo(lyricsMode && data.Lyrics ? Mode.Lyrics : Mode.Expanded);
     }
 
@@ -558,16 +564,57 @@ public partial class MainWindow : Window
     }
 
     // ================= Alertas compactas =================
-    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "")
+    static double alertW = 380, alertH = 62;
+
+    /// `message`: wider and taller, the text wraps (up to 4 lines) and stays longer. Used for chat messages.
+    Action? alertClick;
+
+    void Notch_Click(object s, MouseButtonEventArgs e)
+    {
+        if (mode != Mode.Alert || alertClick is not { } click) return;
+        alertClick = null;
+        alertTimer.Stop();
+        click();
+        GoTo(Mode.Closed);
+    }
+
+    static void OpenWhatsApp()
+    {
+        try { Process.Start(new ProcessStartInfo("whatsapp://") { UseShellExecute = true }); }
+        catch (System.ComponentModel.Win32Exception ex) { Debug.WriteLine(ex); } // not installed
+    }
+
+    /// `message`: wider and taller, the text wraps (up to 4 lines) and stays `MessageSecs`. Used for chat messages.
+    /// `onClick`: clicking the alert runs it and closes the notch.
+    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "", bool message = false, Action? onClick = null)
     {
         if (mode is Mode.Expanded or Mode.Lyrics or Mode.Game || notchHidden || morphing) return; // looking at it, gaming or hidden
+        alertClick = onClick;
+        Notch.Cursor = onClick == null ? null : Cursors.Hand;
         AlertIcon.Text = glyph;
         AlertIconBg.Fill = bg;
         AlertTitle.Text = title;
+        AlertSub.TextWrapping = message ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        AlertSub.LineHeight = message ? 15 : double.NaN;
+        AlertSub.MaxHeight = message ? 60 : double.PositiveInfinity;
         AlertSub.Text = sub;
         AlertValue.Text = value;
+        (alertW, alertH) = (380, 62);
+        if (message)
+        {
+            alertW = 440;
+            AlertSub.Measure(new Size(alertW - 92, double.PositiveInfinity)); // minus margins, icon and padding
+            alertH = Math.Clamp(Math.Ceiling(AlertSub.DesiredSize.Height) + 46, 62, 106);
+        }
+        if (mode == Mode.Alert) // already showing an alert: resize it in place
+        {
+            var (ease, ms) = ShapeEasing();
+            Notch.BeginAnimation(WidthProperty, new DoubleAnimation(alertW, Dur(ms)) { EasingFunction = ease });
+            Notch.BeginAnimation(HeightProperty, new DoubleAnimation(alertH, Dur(ms)) { EasingFunction = ease });
+        }
         GoTo(Mode.Alert);
         alertTimer.Stop();
+        alertTimer.Interval = TimeSpan.FromSeconds(message ? data.MessageSecs : 3.5);
         alertTimer.Start();
     }
 

@@ -76,6 +76,7 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 - **Tareas:** lista del día con recordatorios (`Llamar a Ana @18:30`).
 - **Widgets:** la semana y la batería (o la memoria en un PC de sobremesa).
 - **Avisos:** volumen y brillo, cargador, auriculares, agua, tareas y Pomodoro.
+- **WhatsApp:** los mensajes de WhatsApp Desktop salen en el notch, que se ensancha un poco y crece hasta 4 líneas de texto. Haz clic en el aviso para abrir WhatsApp; cuánto tarda en cerrarse se elige en *Configuración → Comportamiento*.
 - **Modo juego** con métricas del sistema.
 - **Personalización:** estilo fusionado con el borde o *Dynamic Island*, animaciones, color de acento, fundido de color, zona de gracia, orden de las páginas…
 
@@ -100,6 +101,8 @@ Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para
 
 - **Letras:** envía el título y el artista de la canción a [lrclib.net](https://lrclib.net) (se puede desactivar en Configuración).
 - **Tiempo:** envía las coordenadas de tu ciudad a [open-meteo.com](https://open-meteo.com).
+
+Para los avisos de WhatsApp, Windows te pide permiso de notificaciones (*Ajustes → Privacidad → Notificaciones*). Cato lee solo los avisos de WhatsApp, y el texto no sale de tu PC.
 
 El portapapeles y la bandeja solo se guardan en memoria mientras Cato está abierto.
 
