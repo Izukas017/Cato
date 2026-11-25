@@ -5,21 +5,27 @@ namespace Cato;
 /// Turns a Claude Code hook payload (JSON on stdin) into a short line for the Claude page.
 static class Activity
 {
-    public static (string Event, string Text)? FromHookJson(string json)
+    /// `Session` tells Claude Code sessions apart; `Project` is the last folder of their working directory.
+    public record Event(string Name, string Text, string Session, string Project);
+
+    public static Event? FromHookJson(string json)
     {
         try
         {
             using var doc = JsonDocument.Parse(json);
             var r = doc.RootElement;
             var evt = Str(r, "hook_event_name");
-            return evt switch
+            string? text = evt switch
             {
-                "UserPromptSubmit" => (evt, "Nueva petición"),
-                "Stop" => (evt, ""),
-                "Notification" => (evt, Trim(Str(r, "message"), 90)),
-                "PreToolUse" => (evt, Describe(Str(r, "tool_name"), r.TryGetProperty("tool_input", out var i) ? i : default)),
+                "UserPromptSubmit" => "Nueva petición",
+                "Stop" => "",
+                "Notification" => Trim(Str(r, "message"), 90),
+                "PreToolUse" => Describe(Str(r, "tool_name"), r.TryGetProperty("tool_input", out var i) ? i : default),
                 _ => null,
             };
+            if (text == null) return null;
+            var project = System.IO.Path.GetFileName(Str(r, "cwd").TrimEnd('/', '\\'));
+            return new Event(evt, text, Str(r, "session_id"), project == "" ? "sesión" : project);
         }
         catch (JsonException) { return null; }
     }

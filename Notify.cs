@@ -20,7 +20,7 @@ static class Notify
         try
         {
             using var c = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            c.Connect(300);
+            c.Connect(1000);
             using var w = new StreamWriter(c);
             w.WriteLine(kind + "\t" + text.ReplaceLineEndings(" "));
             return true;
@@ -35,13 +35,21 @@ static class Notify
             {
                 try
                 {
-                    using var s = new NamedPipeServerStream(PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
+                    // several hooks can fire at once (parallel tool calls): accept each client and read it on its own task
+                    var s = new NamedPipeServerStream(PipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
                     s.WaitForConnection();
-                    var line = new StreamReader(s).ReadLine();
-                    if (line == null) continue;
-                    var tab = line.IndexOf('\t');
-                    var text = tab < 0 ? "" : line[(tab + 1)..];
-                    onMessage(tab < 0 ? line : line[..tab], text.Length > 200 ? text[..200] : text);
+                    _ = Task.Run(() =>
+                    {
+                        using (s)
+                        {
+                            string? line;
+                            try { line = new StreamReader(s).ReadLine(); } catch (IOException) { return; }
+                            if (line == null) return;
+                            var tab = line.IndexOf('\t');
+                            var text = tab < 0 ? "" : line[(tab + 1)..];
+                            onMessage(tab < 0 ? line : line[..tab], text.Length > 200 ? text[..200] : text);
+                        }
+                    });
                 }
                 catch (IOException ex) { Debug.WriteLine(ex); Thread.Sleep(500); } // client vanished: listen again
             }

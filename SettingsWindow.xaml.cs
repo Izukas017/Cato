@@ -44,7 +44,7 @@ public partial class SettingsWindow : Window
         Slide("Espera antes de cerrar", 0, 2000, 100, D.GraceDelayMs, v => v == 0 ? "al instante" : $"{v / 1000:0.0} s", v => { D.GraceDelayMs = (int)v; Save(); });
         Note("El notch sigue abierto mientras el ratón esté a esa distancia, y solo se cierra tras la espera fuera de ella.");
         Slide("Duración de los mensajes", 3, 20, 1, D.MessageSecs, v => $"{v:0} s", v => { D.MessageSecs = (int)v; Save(); });
-        Note("Tiempo que se queda un mensaje de WhatsApp en el notch. Haz clic en él para abrir WhatsApp.");
+        Note("Tiempo que se queda en el notch un mensaje de WhatsApp o el aviso de Claude. Haz clic en él para abrir la app.");
 
         Section("Páginas", "");
         Note("Ordena con las flechas y oculta las que no uses.");

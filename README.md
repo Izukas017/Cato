@@ -77,7 +77,7 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 - **Widgets:** la semana y la batería (o la memoria en un PC de sobremesa).
 - **Terminal:** una sesión de PowerShell dentro del notch (Intro ejecuta, Esc cancela, ↑↓ historial). Se ejecuta con los permisos de Cato: como administrador si Cato lo está, y como usuario normal si no. No admite programas interactivos.
 - **Avisos:** volumen y brillo, cargador, auriculares, agua, tareas y Pomodoro.
-- **WhatsApp:** los mensajes de WhatsApp Desktop salen en el notch, que se ensancha un poco y crece hasta 4 líneas de texto. Haz clic en el aviso para abrir WhatsApp; cuánto tarda en cerrarse se elige en *Configuración → Comportamiento*.
+- **WhatsApp:** los mensajes de WhatsApp Desktop salen en el notch, que se ensancha un poco y crece hasta 4 líneas de texto. Haz clic en el aviso para abrir WhatsApp; cuánto tarda en cerrarse se elige en *Configuración → Comportamiento* (vale también para el aviso de Claude).
 - **Modo juego** con métricas del sistema.
 - **Personalización:** estilo fusionado con el borde o *Dynamic Island*, animaciones, color de acento, fundido de color, zona de gracia, orden de las páginas…
 
@@ -98,7 +98,7 @@ En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS
 (Solo Windows por ahora.)
 ### Ver qué hace Claude Code (página «Claude»)
 
-La página **Claude** del notch muestra en vivo qué está haciendo Claude Code: si trabaja, espera tu permiso o ha terminado, lo que hace ahora (`Edita Notify.cs`, `Ejecuta dotnet build…`) y las últimas acciones. Para alimentarla, añade a `~/.claude/settings.json` un hook que ejecute `Cato.exe --activity` en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`:
+La página **Claude** del notch muestra en vivo qué está haciendo Claude Code: si trabaja, espera tu permiso o ha terminado, lo que hace ahora (`Edita Notify.cs`, `Ejecuta dotnet build…`) y las últimas acciones. Con varias sesiones abiertas, muestra una fila por sesión (con el nombre de su carpeta). Para alimentarla, añade a `~/.claude/settings.json` un hook que ejecute `Cato.exe --activity` en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`:
 
 ```json
 { "type": "command", "command": "\"%LOCALAPPDATA%\\Programs\\Cato\\Cato.exe\" --activity", "async": true }

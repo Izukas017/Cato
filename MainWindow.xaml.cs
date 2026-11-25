@@ -71,8 +71,8 @@ public partial class MainWindow : Window
             () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
         Notify.Listen((kind, text) => Dispatcher.Invoke(() =>
         {
-            if (kind == "activity") { var tab = text.IndexOf('\t'); if (tab > 0) OnActivity(text[..tab], text[(tab + 1)..]); }
-            else ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon);
+            if (kind == "activity") { var f = text.Split('\t', 4); if (f.Length == 4) OnActivity(f[0], f[1], f[2], f[3]); }
+            else ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon, chat: true);
         }));
         StartAudio();
         StartBrightnessWatch();
@@ -596,7 +596,7 @@ public partial class MainWindow : Window
 
     /// `message`: wider and taller, the text wraps (up to 4 lines) and stays `MessageSecs`. Used for chat messages.
     /// `onClick`: clicking the alert runs it and closes the notch.
-    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "", bool message = false, Action? onClick = null, ImageSource? image = null)
+    internal void ShowAlert(string glyph, Brush bg, string title, string sub, string value = "", bool message = false, Action? onClick = null, ImageSource? image = null, bool chat = false)
     {
         if (mode is Mode.Expanded or Mode.Lyrics or Mode.Game || notchHidden || morphing) return; // looking at it, gaming or hidden
         alertClick = onClick;
@@ -627,7 +627,7 @@ public partial class MainWindow : Window
         }
         GoTo(Mode.Alert);
         alertTimer.Stop();
-        alertTimer.Interval = TimeSpan.FromSeconds(message ? data.MessageSecs : 3.5);
+        alertTimer.Interval = TimeSpan.FromSeconds(message || chat ? data.MessageSecs : 3.5);
         alertTimer.Start();
     }
 
