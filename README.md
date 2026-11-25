@@ -85,7 +85,17 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 
 Windows solo deja medir los FPS de otro programa si Cato se ejecuta como **administrador**. En *Configuración → Atajos y modo juego* tienes el botón **Reiniciar como administrador**. Sin eso, el modo juego muestra el resto de datos. Se miden los juegos DirectX.
 
-En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS no están disponibles.
+En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS y las temperaturas no están disponibles.
+
+### Claude Code, Antigravity y terminal en Linux
+
+Las páginas **Claude**, **Antigravity** y **Terminal** también existen en Linux:
+
+- **Claude:** igual que en Windows, pero los hooks ejecutan `cato --activity` (con Flatpak: `flatpak run io.github.Izukas017.Cato --activity`), en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`. El aviso al terminar se lanza con `cato --notify "Claude terminó"`.
+- **Antigravity:** se lee sola de `~/.gemini/antigravity/brain/…`, sin instalar nada.
+- **Terminal:** una sesión de `bash` con los permisos de Cato (el título dice «usuario» o «root»). No admite programas interactivos. Dentro de un Flatpak es la shell del sandbox, no la de tu sistema.
+- Al hacer clic en un aviso se abre la app con `xdg-open claude://` o `xdg-open antigravity://`; si tu escritorio no tiene registrado ese esquema, no pasa nada. La duración de los avisos se elige en *Configuración → Comportamiento*.
+
 
 ### Arrancar con Windows como administrador
 

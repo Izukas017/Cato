@@ -18,7 +18,7 @@ enum Mode { Closed, Alert, Expanded, Game }
 public partial class NotchWindow : Window
 {
     internal static readonly CultureInfo Es = new("es-ES");
-    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets" };
+    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal", "Claude", "Antigravity" };
     internal static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
     static readonly IBrush GreenB = B("#30D158"), BlueB = B("#0A84FF"), PurpleB = B("#8B7CF6"), DimB = B("#8CFFFFFF"),
         FaintB = B("#59FFFFFF"), CardB = B("#17FFFFFF"), TrackB = B("#33FFFFFF");
@@ -47,7 +47,11 @@ public partial class NotchWindow : Window
         // a dock window, placed at the top centre before it is first shown
         if (TryGetPlatformHandle()?.Handle is { } h) X11Input.MakeDock(h);
         PlaceTopCenter();
-        pages = new Panel[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets };
+        terminal = new TerminalPage(TakeKeyboard);
+        pages = new Panel[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, terminal.Root, claudePage.Root, agPage.Root };
+        Pages.Children.Add(terminal.Root);
+        Pages.Children.Add(claudePage.Root);
+        Pages.Children.Add(agPage.Root);
         for (int i = 0; i < data.PageOrder.Count; i++) if (data.PageOrder[i] == "Rezo") data.PageOrder[i] = PageNames[2];
         for (int i = 0; i < data.HiddenPages.Count; i++) if (data.HiddenPages[i] == "Rezo") data.HiddenPages[i] = PageNames[2];
         InitTools();
@@ -63,6 +67,7 @@ public partial class NotchWindow : Window
         PointerExited += (_, _) => { if (mode == Mode.Expanded && !KeepOpen()) { graceStart = DateTime.Now; graceTimer.Interval = TimeSpan.FromMilliseconds(50); graceTimer.Start(); } };
         Notch.PointerEntered += (_, _) => graceStart = null;
         Notch.ContextRequested += (_, e) => { OpenSettings(); e.Handled = true; };
+        Notch.PointerPressed += (_, e) => { if (mode == Mode.Alert && alertClick is { } click && e.GetCurrentPoint(Notch).Properties.IsLeftButtonPressed) { alertClick = null; alertTimer.Stop(); click(); GoTo(Mode.Closed); } };
 
         Opened += (_, _) => OnOpened();
         UiTick();
@@ -76,6 +81,7 @@ public partial class NotchWindow : Window
         Ipc.Listen(cmd => Dispatcher.UIThread.Post(() => OnCommand(cmd)));
         Hotkeys.Start(k => Dispatcher.UIThread.Post(() => OnCommand(k == 'n' ? "toggle" : "game")));
         StartMedia();
+        AntigravityFeed.Start(OnAntigravity, OnAntigravityDone);
         DevShow();
         if (args.Contains("--settings")) OpenSettings();
     }
@@ -91,6 +97,8 @@ public partial class NotchWindow : Window
 
     void OnCommand(string cmd)
     {
+        var tab = cmd.IndexOf('\t');
+        if (tab > 0) { OnAgentCommand(cmd[..tab], cmd[(tab + 1)..]); return; }
         switch (cmd)
         {
             case "toggle": ToggleHidden(); break;
@@ -230,7 +238,7 @@ public partial class NotchWindow : Window
     // ================= Zona de gracia =================
     DateTime? graceStart;
 
-    bool KeepOpen() => pinned || TaskInput.IsFocused || mode != Mode.Expanded;
+    bool KeepOpen() => pinned || TaskInput.IsFocused || terminal.HasFocus || mode != Mode.Expanded;
 
     void GraceTick()
     {
@@ -335,6 +343,9 @@ public partial class NotchWindow : Window
             case 5: SetTitle("Portapapeles"); UpdateClip(); break;
             case 6: SetTitle("Tareas", "de hoy", GreenB); UpdateTodo(); break;
             case 7: SetTitle("Widgets"); UpdateWidgets(); break;
+            case 8: SetTitle("Terminal", Environment.IsPrivilegedProcess ? "root" : "usuario", Environment.IsPrivilegedProcess ? OrangeB : DimB); break;
+            case 9: UpdateActivity(); break;
+            case 10: UpdateAntigravity(); break;
         }
     }
 
@@ -357,20 +368,30 @@ public partial class NotchWindow : Window
             if (PageVisible(2)) UpdateDay(now);
             if (PageVisible(5)) UpdateClip();
             if (PageVisible(7)) UpdateWidgets();
+            if (PageVisible(9)) UpdateActivity();
+            if (PageVisible(10)) UpdateAntigravity();
         }
     }
 
     // ================= Avisos compactos =================
-    internal void ShowAlert(string icon, IBrush bg, string title, string sub, string value = "")
+    Action? alertClick;
+
+    /// `onClick`: clicking the alert runs it and closes the notch. `image` replaces the icon (an app logo). `chat`: stays `MessageSecs`, like the Windows chat alerts.
+    internal void ShowAlert(string icon, IBrush bg, string title, string sub, string value = "", Action? onClick = null, IImage? image = null, bool chat = false)
     {
         if (mode is Mode.Expanded or Mode.Game || notchHidden) return; // looking at it, gaming or hidden
-        AlertIcon.Data = Icon(icon);
+        alertClick = onClick;
+        AlertImage.Source = image;
+        AlertImageBox.IsVisible = image != null;
+        AlertIcon.IsVisible = AlertIconBg.IsVisible = image == null;
+        if (image == null) AlertIcon.Data = Icon(icon);
         AlertIconBg.Fill = bg;
         AlertTitle.Text = title;
         AlertSub.Text = sub;
         AlertValue.Text = value;
         GoTo(Mode.Alert);
         alertTimer.Stop();
+        alertTimer.Interval = TimeSpan.FromSeconds(chat ? data.MessageSecs : 3.5);
         alertTimer.Start();
     }
 

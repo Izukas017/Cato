@@ -227,7 +227,7 @@ public partial class NotchWindow
     void AddTask_Click(object? s, RoutedEventArgs e)
     {
         TaskInput.IsVisible = true;
-        Activate();
+        TakeKeyboard();
         TaskInput.Focus();
     }
 

@@ -14,7 +14,11 @@
   <ItemGroup>
     <Compile Include="..\..\Logic.cs" Link="Shared\Logic.cs" />
     <Compile Include="..\..\Store.cs" Link="Shared\Store.cs" />
+    <Compile Include="..\..\Activity.cs" Link="Shared\Activity.cs" />
+    <Compile Include="..\..\Antigravity.cs" Link="Shared\Antigravity.cs" />
     <AvaloniaResource Include="..\..\Assets\cato.png" Link="Assets\cato.png" />
+    <AvaloniaResource Include="..\..\Assets\claude.png" Link="Assets\claude.png" />
+    <AvaloniaResource Include="..\..\Assets\antigravity.png" Link="Assets\antigravity.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.23" />

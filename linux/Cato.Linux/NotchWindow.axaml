@@ -44,6 +44,7 @@
                     <Panel Width="34" Height="34" VerticalAlignment="Center">
                         <Ellipse x:Name="AlertIconBg" Fill="#30D158"/>
                         <PathIcon x:Name="AlertIcon" Width="16" Height="16"/>
+                        <Border x:Name="AlertImageBox" IsVisible="False" CornerRadius="9" ClipToBounds="True"><Image x:Name="AlertImage" Stretch="Uniform"/></Border>
                     </Panel>
                     <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
                         <TextBlock x:Name="AlertTitle" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>

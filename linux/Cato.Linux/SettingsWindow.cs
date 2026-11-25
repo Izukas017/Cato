@@ -77,6 +77,7 @@ public class SettingsWindow : Window
         Slide("Zona de gracia", 0, 120, 4, D.GraceZone, v => $"{v:0} px", v => { D.GraceZone = (int)v; Save(); });
         Slide("Espera antes de cerrar", 0, 2000, 100, D.GraceDelayMs, v => v == 0 ? "al instante" : $"{v / 1000:0.0} s", v => { D.GraceDelayMs = (int)v; Save(); });
         Note("El notch sigue abierto mientras el ratón esté a esa distancia, y solo se cierra tras la espera fuera de ella.");
+        Slide("Duración de los avisos de Claude y Antigravity", 3, 20, 1, D.MessageSecs, v => $"{v:0} s", v => { D.MessageSecs = (int)v; Save(); });
 
         Section("Páginas");
         Note("Ordena con las flechas y oculta las que no uses.");

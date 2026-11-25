@@ -11,8 +11,13 @@ static class Ipc
     static string SocketPath =>
         Path.Combine(Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } d ? d : Path.GetTempPath(), "cato.sock");
 
-    public static string CommandFrom(string[] args) =>
-        args.FirstOrDefault(a => a is "--toggle" or "--game" or "--settings")?.TrimStart('-') ?? "settings";
+    /// `toggle`, `game`, `settings`, or `notify<TAB>text` for `cato --notify "text"`.
+    public static string CommandFrom(string[] args)
+    {
+        var i = Array.IndexOf(args, "--notify");
+        if (i >= 0) return "notify\t" + (i + 1 < args.Length ? args[i + 1] : "");
+        return args.FirstOrDefault(a => a is "--toggle" or "--game" or "--settings")?.TrimStart('-') ?? "settings";
+    }
 
     public static bool TrySend(string command)
     {
@@ -21,7 +26,7 @@ static class Ipc
         {
             using var s = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             s.Connect(new UnixDomainSocketEndPoint(SocketPath));
-            s.Send(Encoding.UTF8.GetBytes(command + "\n"));
+            s.Send(Encoding.UTF8.GetBytes(command.ReplaceLineEndings(" ") + "\n"));
             return true;
         }
         catch (SocketException) { return false; } // stale socket left by a crash: we become the instance
@@ -40,9 +45,13 @@ static class Ipc
                 try
                 {
                     using var c = server.Accept();
-                    var buf = new byte[64];
-                    var n = c.Receive(buf);
-                    onCommand(Encoding.UTF8.GetString(buf, 0, n).Trim());
+                    // read until the client closes: activity events carry a few hundred characters
+                    var all = new MemoryStream();
+                    var buf = new byte[2048];
+                    int n;
+                    while (all.Length < 8192 && (n = c.Receive(buf)) > 0) all.Write(buf, 0, n);
+                    var cmd = Encoding.UTF8.GetString(all.ToArray()).TrimEnd('\r', '\n'); // not Trim(): an empty last field must keep its tab
+                    if (cmd != "") onCommand(cmd);
                 }
                 catch (SocketException) { return; }
             }
@@ -55,6 +64,21 @@ static class X11Input
 {
     [DllImport("libX11.so.6")] static extern IntPtr XOpenDisplay(IntPtr name);
     [DllImport("libX11.so.6")] static extern int XFlush(IntPtr display);
+    [DllImport("libX11.so.6")] static extern int XSetInputFocus(IntPtr display, IntPtr window, int revertTo, IntPtr time);
+
+    /// A dock window never gets keyboard focus from the window manager, so take it ourselves (needed to type in the terminal and task boxes).
+    public static void Focus(IntPtr window)
+    {
+        if (broken || window == IntPtr.Zero) return;
+        try
+        {
+            if (display == IntPtr.Zero) display = XOpenDisplay(IntPtr.Zero);
+            if (display == IntPtr.Zero) { broken = true; return; }
+            XSetInputFocus(display, window, 1, IntPtr.Zero); // RevertToPointerRoot, CurrentTime
+            XFlush(display);
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) { Debug.WriteLine(ex); broken = true; }
+    }
     [DllImport("libXext.so.6")]
     static extern void XShapeCombineRectangles(IntPtr display, IntPtr window, int kind, int x, int y, XRectangle[] rects, int n, int op, int ordering);
 
