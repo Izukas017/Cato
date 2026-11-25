@@ -362,29 +362,6 @@
                                 </Grid>
                             </Grid>
 
-                            <!-- Claude: qué está haciendo ahora mismo (alimentado por los hooks de Claude Code) -->
-                            <Grid x:Name="PageAct" Visibility="Collapsed">
-                                <!-- una sesión: detalle y últimas acciones -->
-                                <Grid x:Name="ActSingle">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="260"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse x:Name="ActDot" Width="9" Height="9" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="ActAction" Foreground="White" FontSize="13" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxWidth="235"/>
-                                        </StackPanel>
-                                        <TextBlock x:Name="ActNow" Style="{StaticResource Small}" Foreground="#CCFFFFFF" TextWrapping="Wrap" MaxHeight="64" LineHeight="15"
-                                                   TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
-                                        <TextBlock x:Name="ActState" Style="{StaticResource Small}" FontSize="10" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                    <StackPanel x:Name="ActList" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                </Grid>
-                                <!-- varias sesiones: una fila por sesión -->
-                                <StackPanel x:Name="ActMulti" Visibility="Collapsed" VerticalAlignment="Center"/>
-                            </Grid>
-
                             <!-- Widgets -->
                             <Grid x:Name="PageWidgets" Visibility="Collapsed" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>

@@ -86,7 +86,7 @@ static class Activity
     }
 
     /// One line, no markdown noise, cut at a sentence or word boundary.
-    static string Clean(string s, int max)
+    internal static string Clean(string s, int max)
     {
         s = Regex.Replace(s, @"[`*_#>]+", "");
         s = Regex.Replace(s, @"\s+", " ").Trim();
@@ -96,8 +96,8 @@ static class Activity
         return end > max / 2 ? cut[..(end + 1)] : cut[..(cut.LastIndexOf(' ') is > 0 and var sp ? sp : max)] + "…";
     }
 
-    static string Str(JsonElement e, string key) =>
+    internal static string Str(JsonElement e, string key) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
 
-    static string Trim(string s, int max) => s.Length > max ? s[..max] + "…" : s;
+    internal static string Trim(string s, int max) => s.Length > max ? s[..max] + "…" : s;
 }

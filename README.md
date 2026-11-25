@@ -105,6 +105,11 @@ La página **Claude** del notch muestra en vivo qué está haciendo Claude Code:
 ```
 
 En el notch se muestra la acción (archivo, comando o búsqueda) y esa frase; el texto puede incluir lo que escribas en tus peticiones. No se guarda nada.
+### Antigravity (página «Antigravity»)
+
+Igual que la de Claude, pero **sin instalar nada**: Cato lee las transcripciones que Antigravity guarda en `~/.gemini/antigravity/brain/<conversación>/.system_generated/logs/transcript_full.jsonl`. La página muestra qué hace el agente ahora (`Edita Informe.tsx`, `Ejecuta npm run build`) con una frase que lo explica (el texto del propio agente), y al terminar sale un aviso con el logo de Antigravity; al hacer clic se abre su ventana. Dura lo mismo que los demás mensajes (*Configuración → Comportamiento*).
+
+Solo se leen conversaciones activas en los últimos 30 minutos y no se guarda nada. Como con Claude, el notch muestra texto de tus peticiones y del agente.
 ## Privacidad
 
 Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para:

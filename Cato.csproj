@@ -21,6 +21,7 @@
     <Resource Include="Assets\cato.png" />
     <Resource Include="Assets\whatsapp.png" />
     <Resource Include="Assets\claude.png" />
+    <Resource Include="Assets\antigravity.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.2" />

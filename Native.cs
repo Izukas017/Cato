@@ -8,6 +8,17 @@ static class Native
     /// Lets the app we launch bring its window to the front (Windows blocks it otherwise).
     [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int processId);
 
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr hwnd);
+    [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr hwnd, int cmd);
+    [DllImport("user32.dll")] static extern bool IsIconic(IntPtr hwnd);
+
+    /// Brings an existing window to the front, restoring it if minimized. Launching the app again does not do this for Electron apps.
+    public static void Focus(IntPtr hwnd)
+    {
+        if (IsIconic(hwnd)) ShowWindow(hwnd, 9); // SW_RESTORE
+        SetForegroundWindow(hwnd);
+    }
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool AddClipboardFormatListener(IntPtr hwnd);
 
