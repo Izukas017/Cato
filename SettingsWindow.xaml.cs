@@ -103,7 +103,7 @@ public partial class SettingsWindow : Window
         Note("Qué aparece en la barra del modo juego:");
         foreach (var metric in MainWindow.GameMetrics)
             Toggle(metric, !D.GameHidden.Contains(metric), on => { D.GameHidden.Remove(metric); if (!on) D.GameHidden.Add(metric); Save(); });
-        Note("Las temperaturas de la GPU funcionan siempre. La de la CPU necesita ejecutar Cato como administrador y tener instalado el driver PawnIO (pawnio.eu); si no está disponible, no se muestra.");
+        Note("Las temperaturas de la GPU funcionan siempre. La de la CPU necesita ejecutar Cato como administrador y tener instalado el driver PawnIO (en una terminal: winget install namazso.PawnIO); si no está disponible, no se muestra.");
         if (FpsCounter.IsAdmin) Note("Cato se está ejecutando como administrador: los FPS están activos.");
         else
         {

@@ -96,7 +96,7 @@ Es excluyente con «Normal», para no arrancar dos copias. La tarea no se detien
 
 La barra muestra la temperatura de la **GPU** (junto a su carga) y la de la **CPU**, y en *Configuración → Atajos y modo juego* puedes activar o quitar cada elemento (hora, FPS, CPU, GPU, RAM, VRAM y las dos temperaturas). Pasan a naranja desde 80 ° y a rojo desde 90 °.
 
-Se leen con [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor). La de la GPU funciona siempre; la de la **CPU** exige ejecutar Cato como administrador y tener instalado el driver [PawnIO](https://pawnio.eu). Si no está disponible, esa temperatura no aparece. Si ocultas las dos temperaturas, la librería ni se carga.
+Se leen con [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor). La de la GPU funciona siempre; la de la **CPU** exige ejecutar Cato como administrador y tener instalado el driver [PawnIO](https://pawnio.eu) (`winget install namazso.PawnIO`). Si no está disponible, esa temperatura no aparece. Si ocultas las dos temperaturas, la librería ni se carga.
 ### Aviso cuando Claude Code termina
 
 `Cato.exe --notify "Tarea terminada"` muestra un aviso con el logo de Claude en el notch de la instancia abierta (no abre otro); al hacer clic en él se abre Claude. Para que Claude Code lo lance al acabar, añade un hook `Stop` en `~/.claude/settings.json`:
