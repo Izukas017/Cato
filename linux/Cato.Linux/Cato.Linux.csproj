@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Cato</AssemblyName>
     <RootNamespace>Cato</RootNamespace>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
     <Product>Cato</Product>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
