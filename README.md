@@ -87,6 +87,11 @@ Windows solo deja medir los FPS de otro programa si Cato se ejecuta como **admin
 
 En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS no están disponibles.
 
+### Arrancar con Windows como administrador
+
+En *Configuración → Iniciar con Windows* hay tres opciones: **No**, **Normal** y **Como administrador**. La última crea una tarea programada «Cato» que se ejecuta al iniciar sesión con los privilegios más altos, así que Cato arranca ya como administrador (FPS y temperatura de la CPU activos) **sin que Windows pregunte en cada inicio**. Crearla o quitarla pide permiso a Windows (UAC) una sola vez.
+
+Es excluyente con «Normal», para no arrancar dos copias. La tarea no se detiene con batería ni tiene límite de tiempo. Como administrador, no se pueden arrastrar archivos desde el Explorador a la bandeja.
 ### Temperaturas en el modo juego
 
 La barra muestra la temperatura de la **GPU** (junto a su carga) y la de la **CPU**, y en *Configuración → Atajos y modo juego* puedes activar o quitar cada elemento (hora, FPS, CPU, GPU, RAM, VRAM y las dos temperaturas). Pasan a naranja desde 80 ° y a rojo desde 90 °.

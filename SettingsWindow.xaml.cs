@@ -92,7 +92,8 @@ public partial class SettingsWindow : Window
         Toggle("Barra de volumen y brillo", D.VolumeOverlay, on => { D.VolumeOverlay = on; Save(); });
         Toggle("Aviso al conectar el cargador", D.ChargeAlerts, on => { D.ChargeAlerts = on; Save(); });
         Toggle("Aviso al cambiar de auriculares", D.AudioAlerts, on => { D.AudioAlerts = on; Save(); });
-        Toggle("Iniciar con Windows", Native.StartupEnabled, on => Native.StartupEnabled = on);
+        startupButtons = Choice("Iniciar con Windows", new[] { "No", "Normal", "Como administrador" }, StartupMode(), SetStartup);
+        Note("«Como administrador» pide permiso a Windows una sola vez y después arranca sin preguntar: activa los FPS y la temperatura de la CPU desde el inicio. Se quita volviendo a «No» o «Normal».");
 
         Section("Atajos y modo juego", "\uE765");
         Note("Ctrl + Alt + N  ·  ocultar o mostrar el notch");
@@ -200,19 +201,39 @@ public partial class SettingsWindow : Window
         card.Children.Add(g);
     }
 
-    void Choice(string label, string[] options, int selected, Action<int> onPick)
+    RadioButton[] Choice(string label, string[] options, int selected, Action<int> onPick)
     {
         card.Children.Add(new TextBlock { Text = label, Style = (Style)FindResource("Small"), Margin = new Thickness(0, 4, 0, 6) });
         var wrap = new WrapPanel { Margin = new Thickness(0, 0, 0, 4) };
         var group = Guid.NewGuid().ToString();
+        var buttons = new RadioButton[options.Length];
         for (int i = 0; i < options.Length; i++)
         {
             var idx = i;
-            var rb = new RadioButton { Content = options[i], GroupName = group, IsChecked = i == selected, Style = (Style)FindResource("Seg") };
+            var rb = buttons[i] = new RadioButton { Content = options[i], GroupName = group, IsChecked = i == selected, Style = (Style)FindResource("Seg") };
             rb.Checked += (_, _) => onPick(idx);
             wrap.Children.Add(rb);
         }
         card.Children.Add(wrap);
+        return buttons;
+    }
+
+    RadioButton[]? startupButtons;
+
+    static int StartupMode() => Native.AdminStartupTask ? 2 : Native.StartupEnabled ? 1 : 0; // 0 no, 1 normal, 2 as administrator
+
+    /// 2 = scheduled task with the highest privileges (Windows asks for permission once); 1 = Run key. Only one at a time,
+    /// because an elevated and a normal copy of Cato must not both be started. If Windows' permission is refused, the previous choice comes back.
+    void SetStartup(int mode)
+    {
+        var before = StartupMode();
+        if (mode == before) return;
+        if ((before == 2) != (mode == 2) && !Native.SetAdminStartupTask(mode == 2))
+        {
+            startupButtons![before].IsChecked = true; // refused or failed: back to what it was
+            return;
+        }
+        Native.StartupEnabled = mode == 1;
     }
 
     void Slide(string label, double min, double max, double step, double value, Func<double, string> fmt, Action<double> onChange)

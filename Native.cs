@@ -1,5 +1,6 @@
 using System.Windows.Interop;
 using Microsoft.Win32;
+using Path = System.IO.Path; // WPF's global using also brings in Shapes.Path
 
 namespace Cato;
 
@@ -162,5 +163,64 @@ static class Native
             if (value) k.SetValue("Cato", $"\"{Environment.ProcessPath}\"");
             else k.DeleteValue("Cato", false);
         }
+    }
+
+    // ---- Start with Windows as administrator: a scheduled task at logon with the highest privileges ----
+    // The Run key cannot do this (it would ask for UAC at every logon, or be skipped). Creating the task needs admin once.
+    const string AdminTask = "Cato";
+
+    const string AdminTaskXml = """
+        <?xml version="1.0" encoding="UTF-16"?>
+        <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+          <RegistrationInfo><Description>Inicia Cato con Windows con permisos de administrador</Description></RegistrationInfo>
+          <Triggers><LogonTrigger><Enabled>true</Enabled><UserId>{user}</UserId><Delay>PT5S</Delay></LogonTrigger></Triggers>
+          <Principals><Principal id="Author"><UserId>{user}</UserId><LogonType>InteractiveToken</LogonType><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
+          <Settings>
+            <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+            <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+            <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+            <AllowHardTerminate>true</AllowHardTerminate>
+            <StartWhenAvailable>true</StartWhenAvailable>
+            <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+            <Enabled>true</Enabled>
+          </Settings>
+          <Actions Context="Author"><Exec><Command>"{exe}"</Command><WorkingDirectory>{dir}</WorkingDirectory></Exec></Actions>
+        </Task>
+        """;
+
+    static int RunSchtasks(string args, bool elevated)
+    {
+        var psi = new ProcessStartInfo("schtasks.exe", args) { UseShellExecute = elevated, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
+        if (elevated) psi.Verb = "runas";
+        using var p = Process.Start(psi)!;
+        p.WaitForExit();
+        return p.ExitCode;
+    }
+
+    public static bool AdminStartupTask
+    {
+        get
+        {
+            try { return RunSchtasks($"/Query /TN \"{AdminTask}\"", false) == 0; }
+            catch (System.ComponentModel.Win32Exception) { return false; }
+        }
+    }
+
+    /// Creates or deletes the task. Windows asks for permission (UAC); returns false if it was refused or failed.
+    public static bool SetAdminStartupTask(bool on)
+    {
+        string? xml = null;
+        try
+        {
+            if (!on) return RunSchtasks($"/Delete /TN \"{AdminTask}\" /F", true) == 0;
+            var exe = Environment.ProcessPath!;
+            string Esc(string s) => System.Security.SecurityElement.Escape(s);
+            xml = Path.Combine(Path.GetTempPath(), "cato-task.xml");
+            File.WriteAllText(xml, AdminTaskXml.Replace("{user}", Esc(System.Security.Principal.WindowsIdentity.GetCurrent().Name))
+                .Replace("{exe}", Esc(exe)).Replace("{dir}", Esc(Path.GetDirectoryName(exe)!)), System.Text.Encoding.Unicode); // schtasks wants UTF-16
+            return RunSchtasks($"/Create /TN \"{AdminTask}\" /XML \"{xml}\" /F", true) == 0;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException) { Debug.WriteLine(ex); return false; } // UAC refused
+        finally { if (xml != null) try { File.Delete(xml); } catch (IOException) { } }
     }
 }

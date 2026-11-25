@@ -17,7 +17,9 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-        single = new Mutex(true, @"Local\Cato.SingleInstance", out var first);
+        var first = false;
+        try { single = new Mutex(true, @"Local\Cato.SingleInstance", out first); }
+        catch (UnauthorizedAccessException) { } // the running copy is elevated and ours is not: it is still "already running"
         if (!first) { Shutdown(); return; } // one notch per session
         base.OnStartup(e);
     }
