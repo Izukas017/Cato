@@ -71,7 +71,7 @@ public partial class MainWindow : Window
             () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
         Notify.Listen((kind, text) => Dispatcher.Invoke(() =>
         {
-            if (kind == "activity") { var f = text.Split('\t', 4); if (f.Length == 4) OnActivity(f[0], f[1], f[2], f[3]); }
+            if (kind == "activity") { var f = text.Split('\t', 5); if (f.Length == 5) OnActivity(f[0], f[1], f[2], f[3], f[4]); }
             else ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon, chat: true);
         }));
         StartAudio();

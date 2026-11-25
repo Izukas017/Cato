@@ -13,7 +13,7 @@ public partial class App : System.Windows.Application
         if (e.Args.Contains("--activity"))
         {
             using var stdin = new StreamReader(Console.OpenStandardInput(), Encoding.UTF8);
-            if (Activity.FromHookJson(stdin.ReadToEnd()) is { } a) Notify.Send("activity", string.Join('\t', a.Name, a.Session, a.Project, a.Text));
+            if (Activity.FromHookJson(stdin.ReadToEnd()) is { } a) Notify.Send("activity", string.Join('\t', a.Name, a.Session, a.Project, a.Action.Replace('\t', ' '), a.Note));
             Shutdown();
             return;
         }

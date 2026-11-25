@@ -47,7 +47,7 @@ static class Notify
                             if (line == null) return;
                             var tab = line.IndexOf('\t');
                             var text = tab < 0 ? "" : line[(tab + 1)..];
-                            onMessage(tab < 0 ? line : line[..tab], text.Length > 200 ? text[..200] : text);
+                            onMessage(tab < 0 ? line : line[..tab], text.Length > 600 ? text[..600] : text);
                         }
                     });
                 }

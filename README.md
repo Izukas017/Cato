@@ -98,13 +98,13 @@ En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS
 (Solo Windows por ahora.)
 ### Ver qué hace Claude Code (página «Claude»)
 
-La página **Claude** del notch muestra en vivo qué está haciendo Claude Code: si trabaja, espera tu permiso o ha terminado, lo que hace ahora (`Edita Notify.cs`, `Ejecuta dotnet build…`) y las últimas acciones. Con varias sesiones abiertas, muestra una fila por sesión (con el nombre de su carpeta). Para alimentarla, añade a `~/.claude/settings.json` un hook que ejecute `Cato.exe --activity` en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`:
+La página **Claude** del notch muestra en vivo qué está haciendo Claude Code: si trabaja, espera tu permiso o ha terminado, lo que hace ahora (`Edita Notify.cs`, `Ejecuta dotnet build…`) con una frase que lo explica (la descripción del comando o lo último que Claude ha dicho en ese turno, leído del final de la transcripción de la sesión) y las últimas acciones. Con varias sesiones abiertas, muestra una fila por sesión (con el nombre de su carpeta). Para alimentarla, añade a `~/.claude/settings.json` un hook que ejecute `Cato.exe --activity` en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`:
 
 ```json
 { "type": "command", "command": "\"%LOCALAPPDATA%\\Programs\\Cato\\Cato.exe\" --activity", "async": true }
 ```
 
-En el notch solo se muestra el nombre de la herramienta y un resumen corto (archivo, comando o búsqueda). No se guarda nada.
+En el notch se muestra la acción (archivo, comando o búsqueda) y esa frase; el texto puede incluir lo que escribas en tus peticiones. No se guarda nada.
 ## Privacidad
 
 Cato funciona en tu PC y no envía datos de uso. Solo se conecta a internet para:
