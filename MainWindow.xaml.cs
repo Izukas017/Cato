@@ -9,7 +9,7 @@ enum Mode { Closed, Alert, Expanded, Lyrics, Game }
 public partial class MainWindow : Window
 {
     internal static readonly CultureInfo Es = new("es-ES");
-    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal" };
+    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal", "Claude" };
     static readonly Brush GreenB = Hex("#30D158"), BlueB = Hex("#0A84FF"), PurpleB = Hex("#8B7CF6"),
         DimB = Hex("#8CFFFFFF"), FaintB = Hex("#59FFFFFF"), CardB = Hex("#17FFFFFF"), TrackB = Hex("#33FFFFFF");
     const int WM_CLIPBOARDUPDATE = 0x031D;
@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         SelfCheck.Run();
         InitializeComponent();
         Notch.Background = EarLFill.Fill = EarRFill.Fill = notchBrush;
-        pages = new[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, PageTerm };
+        pages = new[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, PageTerm, PageAct };
         // the "Rezo" page became "Día y tiempo"; keep the user's order/visibility for it
         for (int i = 0; i < data.PageOrder.Count; i++) if (data.PageOrder[i] == "Rezo") data.PageOrder[i] = PageNames[2];
         for (int i = 0; i < data.HiddenPages.Count; i++) if (data.HiddenPages[i] == "Rezo") data.HiddenPages[i] = PageNames[2];
@@ -69,7 +69,11 @@ public partial class MainWindow : Window
         ChatNotifications.Start(
             (from, text) => ShowAlert("", GreenB, from, text, message: true, onClick: () => OpenApp("whatsapp://"), image: WhatsAppIcon),
             () => ShowAlert("", FaintB, "Sin acceso a notificaciones", "Actívalo en Ajustes → Privacidad → Notificaciones"));
-        Notify.Listen(text => Dispatcher.Invoke(() => ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon)));
+        Notify.Listen((kind, text) => Dispatcher.Invoke(() =>
+        {
+            if (kind == "activity") { var tab = text.IndexOf('\t'); if (tab > 0) OnActivity(text[..tab], text[(tab + 1)..]); }
+            else ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon);
+        }));
         StartAudio();
         StartBrightnessWatch();
         await StartMedia();
@@ -540,6 +544,7 @@ public partial class MainWindow : Window
             case 6: SetTitle("Tareas", "de hoy", GreenB); UpdateTodo(); break;
             case 7: SetTitle("Widgets"); UpdateWidgets(); break;
             case 8: SetTitle("Terminal", FpsCounter.IsAdmin ? "administrador" : "usuario", FpsCounter.IsAdmin ? OrangeB : DimB); UpdateTermPrompt(); break;
+            case 9: UpdateActivity(); break;
         }
     }
 
@@ -562,6 +567,7 @@ public partial class MainWindow : Window
             if (PageVisible(2)) UpdateDay(now);
             if (PageVisible(5)) UpdateClip();
             if (PageVisible(7)) UpdateWidgets();
+            if (PageVisible(9)) UpdateActivity();
         }
     }
 

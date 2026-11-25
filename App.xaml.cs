@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Cato;
 
 public partial class App : System.Windows.Application
@@ -6,8 +8,15 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        // `Cato.exe --notify "texto"` only talks to the running Cato; it never opens a second notch
-        if (Notify.TextFrom(e.Args) is { } text) { Notify.Send(text); Shutdown(); return; }
+        // These two only talk to the running Cato; they never open a second notch.
+        if (Notify.TextFrom(e.Args) is { } text) { Notify.Send("notify", text); Shutdown(); return; }
+        if (e.Args.Contains("--activity"))
+        {
+            using var stdin = new StreamReader(Console.OpenStandardInput(), Encoding.UTF8);
+            if (Activity.FromHookJson(stdin.ReadToEnd()) is { } a) Notify.Send("activity", a.Event + "\t" + a.Text);
+            Shutdown();
+            return;
+        }
         single = new Mutex(true, @"Local\Cato.SingleInstance", out var first);
         if (!first) { Shutdown(); return; } // one notch per session
         base.OnStartup(e);

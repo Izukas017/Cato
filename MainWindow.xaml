@@ -362,6 +362,23 @@
                                 </Grid>
                             </Grid>
 
+                            <!-- Claude: qué está haciendo ahora mismo (alimentado por los hooks de Claude Code) -->
+                            <Grid x:Name="PageAct" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="ActDot" Width="9" Height="9" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="ActState" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="ActNow" Style="{StaticResource Small}" Foreground="White" TextWrapping="Wrap" MaxHeight="48" LineHeight="15"
+                                               TextTrimming="CharacterEllipsis" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ActList" Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </Grid>
+
                             <!-- Widgets -->
                             <Grid x:Name="PageWidgets" Visibility="Collapsed" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
