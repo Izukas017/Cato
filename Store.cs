@@ -40,6 +40,7 @@ public class Data
     // Modo juego
     public double GameOpacity { get; set; } = 0.6;
     public bool GameAccent { get; set; } = true;
+    public List<string> GameHidden { get; set; } = new(); // game bar items the user turned off (MainWindow.GameMetrics)
 
     // Extras
     public bool Lyrics { get; set; } = true;

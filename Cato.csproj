@@ -24,6 +24,7 @@
     <Resource Include="Assets\antigravity.png" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.2" />
     <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="11.0.0" />

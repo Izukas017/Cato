@@ -218,30 +218,52 @@ public partial class MainWindow : Window
             using var stats = new SystemStats();
             while (!cts.IsCancellationRequested)
             {
-                var s = stats.Sample();
+                var s = stats.Sample(gameWantsTemps);
                 _ = Dispatcher.BeginInvoke(() => ShowStats(s));
                 try { await Task.Delay(1000, cts.Token); } catch (TaskCanceledException) { }
             }
         });
     }
 
+    /// Items of the game bar, in the order the settings list them. `data.GameHidden` holds the ones turned off.
+    internal static readonly string[] GameMetrics = { "Hora", "FPS", "CPU", "GPU", "RAM", "VRAM", "Temperatura CPU", "Temperatura GPU" };
+
+    bool GameShows(string metric) => !data.GameHidden.Contains(metric);
+
+    // read by the sampling thread; refreshed whenever settings change
+    volatile bool gameWantsTemps;
+
     void ShowStats(StatsSample s)
     {
         if (mode != Mode.Game) return;
+        GameClock.Visibility = GameShows("Hora") ? Visibility.Visible : Visibility.Collapsed;
         GameClock.Text = DateTime.Now.ToString("HH:mm");
-        // Only show what there's data for; the bar resizes to fit.
-        Metric(GFpsBox, GFps, s.Fps?.ToString());
-        Metric(GCpuBox, GCpu, $"{s.Cpu:0}%");
-        Metric(GGpuBox, GGpu, s.Gpu is { } g ? $"{g:0}%" : null);
-        Metric(GRamBox, GRam, $"{s.RamPct:0}%");
-        Metric(GVramBox, GVram, s.VramUsedGb is { } u ? (s.VramTotalGb is { } t ? $"{u:0.0}/{t:0} GB" : $"{u:0.0} GB") : null);
+        // Only show what there's data for and the user kept on; the bar resizes to fit.
+        Metric(GFpsBox, GFps, GameShows("FPS") ? s.Fps?.ToString() : null);
+        Pair(GCpuBox, GCpu, GCpuT, GameShows("CPU") ? $"{s.Cpu:0}%" : null, GameShows("Temperatura CPU") ? Temp(s.CpuTemp) : null, s.CpuTemp);
+        Pair(GGpuBox, GGpu, GGpuT, GameShows("GPU") && s.Gpu is { } g ? $"{g:0}%" : null, GameShows("Temperatura GPU") ? Temp(s.GpuTemp) : null, s.GpuTemp);
+        Metric(GRamBox, GRam, GameShows("RAM") ? $"{s.RamPct:0}%" : null);
+        Metric(GVramBox, GVram, GameShows("VRAM") && s.VramUsedGb is { } u ? (s.VramTotalGb is { } t ? $"{u:0.0}/{t:0} GB" : $"{u:0.0} GB") : null);
         FitGameBar();
     }
+
+    static string? Temp(double? t) => t is { } v ? $"{v:0}°" : null;
 
     static void Metric(FrameworkElement box, TextBlock value, string? text)
     {
         box.Visibility = text == null ? Visibility.Collapsed : Visibility.Visible;
         value.Text = text ?? "";
+    }
+
+    /// A load plus a temperature in one box; the box disappears when both are off. The temperature warms up past 80 and 90 °.
+    static void Pair(FrameworkElement box, TextBlock load, TextBlock temp, string? loadText, string? tempText, double? degrees)
+    {
+        load.Visibility = loadText == null ? Visibility.Collapsed : Visibility.Visible;
+        load.Text = loadText ?? "";
+        temp.Visibility = tempText == null ? Visibility.Collapsed : Visibility.Visible;
+        temp.Text = tempText ?? "";
+        temp.Foreground = degrees >= 90 ? Brushes.OrangeRed : degrees >= 80 ? OrangeB : DimB;
+        box.Visibility = loadText == null && tempText == null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     void FitGameBar()
@@ -274,6 +296,7 @@ public partial class MainWindow : Window
         Ring.Stroke = HeaderRing.Stroke = accent;
         Brush values = data.GameAccent ? accent : Brushes.White; // game bar values: accent colour or plain white
         GFps.Foreground = GCpu.Foreground = GGpu.Foreground = GRam.Foreground = GVram.Foreground = values;
+        gameWantsTemps = GameShows("Temperatura CPU") || GameShows("Temperatura GPU");
         Glow.Background = GlowBrush();
         Glow.BeginAnimation(OpacityProperty, null);
         Glow.Opacity = GlowTarget(mode);

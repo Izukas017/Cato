@@ -6,7 +6,45 @@ using Microsoft.Win32;
 
 namespace Cato;
 
-public record StatsSample(double Cpu, double? Gpu, double RamPct, double? VramUsedGb, double? VramTotalGb, int? Fps);
+public record StatsSample(double Cpu, double? Gpu, double RamPct, double? VramUsedGb, double? VramTotalGb, int? Fps, double? CpuTemp = null, double? GpuTemp = null);
+
+/// CPU and GPU temperatures through LibreHardwareMonitor. GPU temperatures work as a normal user; the CPU's need
+/// administrator rights plus the PawnIO driver (otherwise the library reports 0, which we treat as "not available").
+sealed class TempReader : IDisposable
+{
+    readonly LibreHardwareMonitor.Hardware.Computer pc = new() { IsCpuEnabled = true, IsGpuEnabled = true };
+
+    public static TempReader? TryOpen()
+    {
+        try { var r = new TempReader(); r.pc.Open(); return r; }
+        catch (Exception ex) { Debug.WriteLine(ex); return null; } // the library throws a bit of everything when a driver is missing
+    }
+
+    public (double? Cpu, double? Gpu) Read()
+    {
+        double? cpu = null, gpu = null;
+        try
+        {
+            foreach (var hw in pc.Hardware)
+            {
+                hw.Update();
+                var temps = hw.Sensors.Where(s => s.SensorType == LibreHardwareMonitor.Hardware.SensorType.Temperature && s.Value is > 0).ToList();
+                if (temps.Count == 0) continue;
+                if (hw.HardwareType == LibreHardwareMonitor.Hardware.HardwareType.Cpu)
+                    cpu = temps.FirstOrDefault(s => s.Name.Contains("Package") || s.Name.Contains("Tctl"))?.Value ?? temps.Max(s => s.Value);
+                else // several GPUs (integrated + discrete): the hottest core is the one being used
+                {
+                    var t = temps.FirstOrDefault(s => s.Name == "GPU Core")?.Value ?? temps.Max(s => s.Value);
+                    gpu = gpu == null ? t : Math.Max(gpu.Value, t!.Value);
+                }
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine(ex); }
+        return (cpu, gpu);
+    }
+
+    public void Dispose() { try { pc.Close(); } catch (Exception ex) { Debug.WriteLine(ex); } }
+}
 
 /// Samples system load for game mode. Call Sample() about once a second from a background thread.
 sealed class SystemStats : IDisposable
@@ -21,13 +59,19 @@ sealed class SystemStats : IDisposable
     readonly FpsCounter? fps = FpsCounter.TryStart();
     readonly Stopwatch since = Stopwatch.StartNew();
 
-    public StatsSample Sample()
+    TempReader? temps;
+    bool tempsTried;
+
+    /// `wantTemps`: whether the game bar shows a temperature right now; the sensor library only starts when it does.
+    public StatsSample Sample(bool wantTemps)
     {
         var gpuLoad = GpuLoad();
         var vramGb = VramUsedGb();
         int? f = null;
         if (fps != null) { f = fps.Take(Native.ForegroundPid(), since.Elapsed.TotalSeconds); since.Restart(); }
-        return new(Cpu(), gpuLoad, Native.MemoryLoad(), vramGb, vramTotal, f);
+        if (wantTemps && !tempsTried) { tempsTried = true; temps = TempReader.TryOpen(); }
+        var (cpuT, gpuT) = wantTemps && temps != null ? temps.Read() : (null, null);
+        return new(Cpu(), gpuLoad, Native.MemoryLoad(), vramGb, vramTotal, f, cpuT, gpuT);
     }
 
     double Cpu()
@@ -108,6 +152,7 @@ sealed class SystemStats : IDisposable
     public void Dispose()
     {
         fps?.Dispose();
+        temps?.Dispose();
     }
 }
 

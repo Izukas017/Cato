@@ -61,7 +61,7 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 | Atajo | Acción |
 |---|---|
 | `Ctrl` + `Alt izquierdo` + `N` | Ocultar / mostrar el notch |
-| `Ctrl` + `Alt izquierdo` + `G` | Modo juego: barra fina con hora, FPS, CPU, GPU, RAM y VRAM |
+| `Ctrl` + `Alt izquierdo` + `G` | Modo juego: barra fina con hora, FPS, CPU, GPU, RAM, VRAM y temperaturas (se elige qué ver en *Configuración*) |
 
 `AltGr` (Alt derecho) no activa los atajos, así que puedes seguir escribiendo con él (por ejemplo, la ñ).
 
@@ -87,6 +87,11 @@ Windows solo deja medir los FPS de otro programa si Cato se ejecuta como **admin
 
 En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS no están disponibles.
 
+### Temperaturas en el modo juego
+
+La barra muestra la temperatura de la **GPU** (junto a su carga) y la de la **CPU**, y en *Configuración → Atajos y modo juego* puedes activar o quitar cada elemento (hora, FPS, CPU, GPU, RAM, VRAM y las dos temperaturas). Pasan a naranja desde 80 ° y a rojo desde 90 °.
+
+Se leen con [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor). La de la GPU funciona siempre; la de la **CPU** exige ejecutar Cato como administrador y tener instalado el driver [PawnIO](https://pawnio.eu). Si no está disponible, esa temperatura no aparece. Si ocultas las dos temperaturas, la librería ni se carga.
 ### Aviso cuando Claude Code termina
 
 `Cato.exe --notify "Tarea terminada"` muestra un aviso con el logo de Claude en el notch de la instancia abierta (no abre otro); al hacer clic en él se abre Claude. Para que Claude Code lo lance al acabar, añade un hook `Stop` en `~/.claude/settings.json`:

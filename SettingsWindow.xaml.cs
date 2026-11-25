@@ -96,9 +96,13 @@ public partial class SettingsWindow : Window
 
         Section("Atajos y modo juego", "\uE765");
         Note("Ctrl + Alt + N  ·  ocultar o mostrar el notch");
-        Note("Ctrl + Alt + G  ·  modo juego: barra fina con hora, FPS, CPU, GPU, RAM y VRAM");
+        Note("Ctrl + Alt + G  ·  modo juego: barra fina con las métricas que elijas abajo");
         Slide("Opacidad del modo juego", 0.2, 1, 0.05, D.GameOpacity, v => $"{v * 100:0}%", v => { D.GameOpacity = v; Save(); });
         Toggle("Color de acento en el modo juego", D.GameAccent, on => { D.GameAccent = on; Save(); });
+        Note("Qué aparece en la barra del modo juego:");
+        foreach (var metric in MainWindow.GameMetrics)
+            Toggle(metric, !D.GameHidden.Contains(metric), on => { D.GameHidden.Remove(metric); if (!on) D.GameHidden.Add(metric); Save(); });
+        Note("Las temperaturas de la GPU funcionan siempre. La de la CPU necesita ejecutar Cato como administrador y tener instalado el driver PawnIO (pawnio.eu); si no está disponible, no se muestra.");
         if (FpsCounter.IsAdmin) Note("Cato se está ejecutando como administrador: los FPS están activos.");
         else
         {
