@@ -18,7 +18,7 @@ public partial class MainWindow
     static HttpClient CreateHttp()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.3");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.3.1");
         return h;
     }
 

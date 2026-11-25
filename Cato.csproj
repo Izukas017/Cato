@@ -8,7 +8,7 @@
     <AssemblyName>Cato</AssemblyName>
     <RootNamespace>Cato</RootNamespace>
     <ApplicationIcon>Assets\cato.ico</ApplicationIcon>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Product>Cato</Product>
   </PropertyGroup>
   <ItemGroup>
