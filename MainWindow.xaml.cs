@@ -9,7 +9,7 @@ enum Mode { Closed, Alert, Expanded, Lyrics, Game }
 public partial class MainWindow : Window
 {
     internal static readonly CultureInfo Es = new("es-ES");
-    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal", "Claude", "Antigravity" };
+    internal static readonly string[] PageNames = { "Home", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Terminal", "Claude", "Antigravity" };
     static readonly Brush GreenB = Hex("#30D158"), BlueB = Hex("#0A84FF"), PurpleB = Hex("#8B7CF6"),
         DimB = Hex("#8CFFFFFF"), FaintB = Hex("#59FFFFFF"), CardB = Hex("#17FFFFFF"), TrackB = Hex("#33FFFFFF");
     const int WM_CLIPBOARDUPDATE = 0x031D;
@@ -37,18 +37,22 @@ public partial class MainWindow : Window
         SelfCheck.Run();
         InitializeComponent();
         Notch.Background = EarLFill.Fill = EarRFill.Fill = notchBrush;
-        pages = new[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, PageTerm, claudePage.Root, agPage.Root };
+        InitHome();
+        pages = new[] { homeRoot, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageTerm, claudePage.Root, agPage.Root };
         Pages.Children.Add(claudePage.Root);
         Pages.Children.Add(agPage.Root);
-        // the "Rezo" page became "Día y tiempo"; keep the user's order/visibility for it
-        for (int i = 0; i < data.PageOrder.Count; i++) if (data.PageOrder[i] == "Rezo") data.PageOrder[i] = PageNames[2];
-        for (int i = 0; i < data.HiddenPages.Count; i++) if (data.HiddenPages[i] == "Rezo") data.HiddenPages[i] = PageNames[2];
+        claudePage.Footer(ClaudeLimits(false));
+        agPage.Footer(AgLimits(false));
+        // renamed pages ("Rezo" → "Día y tiempo", "Música" → "Home"): keep the user's order/visibility for them
+        foreach (var list in new[] { data.PageOrder, data.HiddenPages })
+            for (int i = 0; i < list.Count; i++) list[i] = list[i] switch { "Rezo" => PageNames[2], "Música" => PageNames[0], var n => n };
         InitWaves();
         InitShelf();
         InitTodo();
         ApplySettings();
         page = VisiblePages()[0];
         foreach (var p in pages) p.Visibility = p == pages[page] ? Visibility.Visible : Visibility.Collapsed;
+        FitExpanded();
         ui.Tick += (_, _) => UiTick();
         alertTimer.Tick += (_, _) => { alertTimer.Stop(); if (mode == Mode.Alert && !pinned) GoTo(Mode.Closed); };
         overlayTimer.Tick += (_, _) => HideOverlay();
@@ -74,6 +78,7 @@ public partial class MainWindow : Window
         Notify.Listen((kind, text) => Dispatcher.Invoke(() =>
         {
             if (kind == "activity") { var f = text.Split('\t', 5); if (f.Length == 5) OnActivity(f[0], f[1], f[2], f[3], f[4]); }
+            else if (kind == "limits") OnLimits(text);
             else ShowAlert("", GreenB, "Claude terminó", text, onClick: () => OpenApp("claude://"), image: ClaudeIcon, chat: true);
         }));
         AntigravityFeed.Start(OnAntigravity, OnAntigravityDone);
@@ -92,6 +97,14 @@ public partial class MainWindow : Window
         var arg = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--show="))?[7..];
         if (arg == null) return;
         pinned = true;
+        var args = Environment.GetCommandLineArgs();
+        if (args.FirstOrDefault(a => a.StartsWith("--widgets="))?[10..] is { } w) { data.HomeWidgets = w.Split(',').ToList(); BuildHome(); } // not saved unless edited
+        if (args.Contains("--editwidgets")) ToggleHomeEdit();
+        if (args.FirstOrDefault(a => a.StartsWith("--limits="))?[9..].Split(',') is [var five, var week]) // e.g. --limits=23,91 (not saved)
+        {
+            var t = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            (data.ClaudeFive, data.ClaudeFiveReset, data.ClaudeWeek, data.ClaudeWeekReset) = (double.Parse(five), t + 8000, double.Parse(week), t + 300000);
+        }
         if (int.TryParse(arg, out var p)) { page = p; foreach (var pg in pages) pg.Visibility = pg == pages[p] ? Visibility.Visible : Visibility.Collapsed; GoTo(Mode.Expanded); }
         else if (arg == "lyrics") { lyricsMode = true; GoTo(Mode.Lyrics); }
         else if (arg == "alert") ShowAlert("", GreenB, "Cargando", "Cargador conectado", "70%");
@@ -293,7 +306,7 @@ public partial class MainWindow : Window
         if (data.Anim == AnimStyle.Liquida) data.Anim = AnimStyle.Suave;
         if (data.PageAnim == PageAnim.Liquida) data.PageAnim = PageAnim.Deslizar;
         var accent = Hex(data.Accent);
-        Ring.Stroke = HeaderRing.Stroke = accent;
+        Ring.Stroke = accent;
         Brush values = data.GameAccent ? accent : Brushes.White; // game bar values: accent colour or plain white
         GFps.Foreground = GCpu.Foreground = GGpu.Foreground = GRam.Foreground = GVram.Foreground = values;
         gameWantsTemps = GameShows("Temperatura CPU") || GameShows("Temperatura GPU");
@@ -305,6 +318,7 @@ public partial class MainWindow : Window
         notchBrush.Color = NotchColor(mode);
         ConfigurePomo();
         InitWater();
+        BuildHome(); // picks up the accent and the visible pages
         var v = VisiblePages();
         if (!v.Contains(page)) ShowPage(v[0], 0);
         UpdateDots();
@@ -365,7 +379,7 @@ public partial class MainWindow : Window
     {
         Mode.Closed => (200, 38, 18),
         Mode.Alert => (alertW, alertH, 24),
-        Mode.Expanded => (580, 150, 27),
+        Mode.Expanded => (expanded.W, expanded.H, 27), // depends on the page (FitExpanded)
         Mode.Game => (gameWidth, 26, 13),
         _ => (680, 140, 27),
     };
@@ -433,7 +447,8 @@ public partial class MainWindow : Window
     readonly DispatcherTimer graceTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     DateTime? outsideSince;
 
-    bool KeepOpen() => pinned || Notch.ContextMenu?.IsOpen == true || TaskInput.IsKeyboardFocusWithin || TermIn.IsKeyboardFocusWithin;
+    bool KeepOpen() => pinned || Notch.ContextMenu?.IsOpen == true || TaskInput.IsKeyboardFocusWithin || TermIn.IsKeyboardFocusWithin
+        || homeNote?.IsKeyboardFocusWithin == true;
 
     void Notch_MouseLeave(object s, MouseEventArgs e)
     {
@@ -493,8 +508,6 @@ public partial class MainWindow : Window
         return v.Length == 0 ? new[] { 0 } : v;
     }
 
-    void PrevPage_Click(object s, RoutedEventArgs e) => Step(-1);
-    void NextPage_Click(object s, RoutedEventArgs e) => Step(1);
 
     void Step(int d)
     {
@@ -549,29 +562,32 @@ public partial class MainWindow : Window
             });
     }
 
+    /// Pages other than Home name themselves under the user's name in the top bar (Home shows the date there).
     void SetTitle(string main, string accent = "", Brush? accentBrush = null)
     {
-        PageTitle.Inlines.Clear();
-        PageTitle.Inlines.Add(new Run(main));
-        if (accent != "") PageTitle.Inlines.Add(new Run(" " + accent) { Foreground = accentBrush ?? DimB, FontWeight = FontWeights.SemiBold });
+        if (page == 0) return;
+        homeDate.Inlines.Clear();
+        homeDate.Inlines.Add(new Run(main));
+        if (accent != "") homeDate.Inlines.Add(new Run(" " + accent) { Foreground = accentBrush ?? DimB, FontWeight = FontWeights.SemiBold });
     }
 
     void OnPageShown(int i)
     {
         var now = DateTime.Now;
+        FitExpanded();
+        BuildHomeTabs(); // the bar is on every page: mark this one
         switch (i)
         {
-            case 0: SetTitle(""); UpdateMediaProgress(); break;
+            case 0: RefreshHome(); break;
             case 1: SetTitle("Pomodoro"); UpdatePomo(now); break;
             case 2: SetTitle("Tiempo", data.City); UpdateDay(now); break;
             case 3: SetTitle("Agua", "Recordatorio", BlueB); UpdateWater(); break;
             case 4: SetTitle("Bandeja"); UpdateShelf(); break;
             case 5: SetTitle("Portapapeles"); UpdateClip(); break;
             case 6: SetTitle("Tareas", "de hoy", GreenB); UpdateTodo(); break;
-            case 7: SetTitle("Widgets"); UpdateWidgets(); break;
-            case 8: SetTitle("Terminal", FpsCounter.IsAdmin ? "administrador" : "usuario", FpsCounter.IsAdmin ? OrangeB : DimB); UpdateTermPrompt(); break;
-            case 9: UpdateActivity(); break;
-            case 10: UpdateAntigravity(); break;
+            case 7: SetTitle("Terminal", FpsCounter.IsAdmin ? "administrador" : "usuario", FpsCounter.IsAdmin ? OrangeB : DimB); UpdateTermPrompt(); break;
+            case 8: UpdateActivity(); break;
+            case 9: UpdateAntigravity(); break;
         }
     }
 
@@ -581,11 +597,11 @@ public partial class MainWindow : Window
     void UiTick()
     {
         var now = DateTime.Now;
-        Clock.Text = HeaderTime.Text = now.ToString("HH:mm");
-        HeaderDate.Text = now.ToString("ddd d MMM yyyy", Es);
+        Clock.Text = now.ToString("HH:mm");
         PomoTick(now);
         if (mode is Mode.Expanded or Mode.Lyrics) UpdateMediaProgress();
         PowerTick();
+        HomeTick(now);
         if (now.Minute != lastMinute)
         {
             lastMinute = now.Minute;
@@ -593,9 +609,8 @@ public partial class MainWindow : Window
             TodoReminders(now);
             if (PageVisible(2)) UpdateDay(now);
             if (PageVisible(5)) UpdateClip();
-            if (PageVisible(7)) UpdateWidgets();
-            if (PageVisible(9)) UpdateActivity();
-            if (PageVisible(10)) UpdateAntigravity();
+            if (PageVisible(8)) UpdateActivity();
+            if (PageVisible(9)) UpdateAntigravity();
         }
     }
 
@@ -678,15 +693,13 @@ public partial class MainWindow : Window
         if (fraction == lastRing) return; // new geometry = a full redraw of the window
         lastRing = fraction;
         Ring.Data = RingGeometry(9, 7.5, fraction);
-        HeaderRing.Data = RingGeometry(6, 5, fraction);
     }
 
     static readonly double[] WaveRest = { 0.22, 0.22, 0.22, 0.22 }; // paused: flat line of dots
     bool? wavePlaying;
 
     IEnumerable<(Rectangle Bar, int I)> Bars() =>
-        Wave.Children.OfType<Rectangle>().Select((b, i) => (b, i))
-            .Concat(HeaderWave.Children.OfType<Rectangle>().Select((b, i) => (b, i)));
+        Wave.Children.OfType<Rectangle>().Select((b, i) => (b, i));
 
     void InitWaves()
     {

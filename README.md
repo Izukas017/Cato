@@ -8,7 +8,7 @@
 
 ## Instalación
 
-1. Ve a [**Releases**](https://github.com/Izukas017/Cato/releases/latest) y descarga `CatoSetup-0.3.1.exe`.
+1. Ve a [**Releases**](https://github.com/Izukas017/Cato/releases/latest) y descarga `CatoSetup-0.4.0.exe`.
 2. Ábrelo. Como el instalador todavía no está firmado, Windows puede mostrar *«Windows protegió tu PC»*: pulsa **Más información → Ejecutar de todas formas**.
 3. Sigue el asistente. Puedes elegir crear un acceso directo en el escritorio e **iniciar Cato con Windows**.
 
@@ -24,7 +24,7 @@ En [**Releases**](https://github.com/Izukas017/Cato/releases/latest) hay dos opc
 **Flatpak** (recomendado):
 
 ```bash
-flatpak install --user ./Cato-0.3.1-x86_64.flatpak
+flatpak install --user ./Cato-0.4.0-x86_64.flatpak
 flatpak run io.github.Izukas017.Cato
 ```
 
@@ -33,8 +33,8 @@ Si no tienes Flathub configurado, Flatpak lo añade para descargar el runtime `o
 **Instalación normal** (sin Flatpak, solo para tu usuario, sin `sudo`):
 
 ```bash
-tar -xzf Cato-0.3.1-linux-x64.tar.gz
-cd cato-0.3.1
+tar -xzf Cato-0.4.0-linux-x64.tar.gz
+cd cato-0.4.0
 ./install.sh        # para quitarlo: ./uninstall.sh
 ```
 
@@ -67,14 +67,13 @@ Tus ajustes se quedan en `%APPDATA%\Cato`; borra esa carpeta si quieres eliminar
 
 ## Qué incluye
 
-- **Música:** carátula, barra de progreso y controles de lo que suene en el PC (Spotify, YouTube…), con **letras sincronizadas**.
+- **Home:** tu panel. Arriba, tu nombre, la fecha, un acceso a cada página y un botón para fijar el notch abierto. Debajo, los widgets que elijas: pulsa el lápiz para añadir, quitar u ordenar. Hay 17: sistema (CPU, RAM, GPU y red), tiempo con previsión de 4 días, música (con **letras sincronizadas**), volumen, Pomodoro, agua, tareas, la semana, calendario, relojes del mundo, progreso del día/semana/mes/año, discos, equipo (batería o memoria y tiempo encendido), Claude, Antigravity, portapapeles y una nota rápida. Se ven tres filas; si hay más, se desplaza con la rueda.
 - **Pomodoro:** la ronda completa de un vistazo, con descansos cortos y largo configurables.
 - **Día y tiempo:** temperatura y estado del cielo, y el arco del sol con alba, amanecer, mediodía, atardecer y anochecer.
 - **Agua:** contador diario, gráfica por horas y recordatorios.
 - **Bandeja:** suelta archivos en el notch y sácalos arrastrando cuando los necesites.
 - **Portapapeles:** los últimos textos copiados, a un clic.
 - **Tareas:** lista del día con recordatorios (`Llamar a Ana @18:30`).
-- **Widgets:** la semana y la batería (o la memoria en un PC de sobremesa).
 - **Terminal:** una sesión de PowerShell dentro del notch (Intro ejecuta, Esc cancela, ↑↓ historial). Se ejecuta con los permisos de Cato: como administrador si Cato lo está, y como usuario normal si no. No admite programas interactivos.
 - **Avisos:** volumen y brillo, cargador, auriculares, agua, tareas y Pomodoro.
 - **WhatsApp:** los mensajes de WhatsApp Desktop salen en el notch, que se ensancha un poco y crece hasta 4 líneas de texto. Haz clic en el aviso para abrir WhatsApp; cuánto tarda en cerrarse se elige en *Configuración → Comportamiento* (vale también para el aviso de Claude).
@@ -91,7 +90,8 @@ En Linux el modo juego muestra CPU y RAM, y GPU y VRAM en gráficas AMD; los FPS
 
 Las páginas **Claude**, **Antigravity** y **Terminal** también existen en Linux:
 
-- **Claude:** igual que en Windows, pero los hooks ejecutan `cato --activity` (con Flatpak: `flatpak run io.github.Izukas017.Cato --activity`), en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`. El aviso al terminar se lanza con `cato --notify "Claude terminó"`.
+- **Claude:** igual que en Windows, pero los hooks ejecutan `cato --activity` (con Flatpak: `flatpak run io.github.Izukas017.Cato --activity`), en `UserPromptSubmit`, `PreToolUse` (con `"matcher": "*"`), `Notification` y `Stop`, con `"async": true`. El aviso al terminar se lanza con `cato --notify "Claude terminó"`. Los límites del plan llegan poniendo `cato --statusline` como `statusLine` en `~/.claude/settings.json`.
+- **Home:** los mismos widgets que en Windows. El volumen usa `wpctl` (PipeWire) o `pactl` (PulseAudio); sin ninguno de los dos, el widget muestra «—». La GPU solo aparece en gráficas AMD. La foto del avatar sale de `/var/lib/AccountsService/icons/<usuario>` o de `~/.face`.
 - **Antigravity:** se lee sola de `~/.gemini/antigravity/brain/…`, sin instalar nada.
 - **Terminal:** una sesión de `bash` con los permisos de Cato (el título dice «usuario» o «root»). No admite programas interactivos. Dentro de un Flatpak es la shell del sandbox, no la de tu sistema.
 - Al hacer clic en un aviso se abre la app con `xdg-open claude://` o `xdg-open antigravity://`; si tu escritorio no tiene registrado ese esquema, no pasa nada. La duración de los avisos se elige en *Configuración → Comportamiento*.
@@ -125,6 +125,14 @@ La página **Claude** del notch muestra en vivo qué está haciendo Claude Code:
 ```
 
 En el notch se muestra la acción (archivo, comando o búsqueda) y esa frase; el texto puede incluir lo que escribas en tus peticiones. No se guarda nada.
+
+**Límites del plan.** La página y el widget de Claude muestran siempre cuánto llevas gastado de los límites de 5 horas y de 7 días, y cuándo se reinicia cada uno. Claude Code solo da ese dato a la *status line*, así que pon Cato como tu status line en `~/.claude/settings.json` (escribe en la barra de Claude Code algo como `5 h 23 % · 7 d 41 %`):
+
+```json
+"statusLine": { "type": "command", "command": "\"%LOCALAPPDATA%\\Programs\\Cato\\Cato.exe\" --statusline" }
+```
+
+Solo llega con una suscripción Pro, Max o Ultra (no con clave de API), y tras la primera respuesta de la sesión. Cato guarda el último valor, así que se ve aunque Claude Code esté cerrado. Antigravity no deja leer sus límites desde fuera, así que su página solo indica dónde verlos.
 ### Antigravity (página «Antigravity»)
 
 Igual que la de Claude, pero **sin instalar nada**: Cato lee las transcripciones que Antigravity guarda en `~/.gemini/antigravity/brain/<conversación>/.system_generated/logs/transcript_full.jsonl`. La página muestra qué hace el agente ahora (`Edita Informe.tsx`, `Ejecuta npm run build`) con una frase que lo explica (el texto del propio agente), y al terminar sale un aviso con el logo de Antigravity; al hacer clic se abre su ventana. Dura lo mismo que los demás mensajes (*Configuración → Comportamiento*).
@@ -168,5 +176,5 @@ En Linux (con el SDK de .NET 10, y `flatpak-builder` para el Flatpak):
 dotnet run --project linux/Cato.Linux                       # ejecutar
 sh linux/install/make-tarball.sh                            # artifacts/Cato-<versión>-linux-x64.tar.gz
 flatpak-builder --force-clean --repo=repo build linux/flatpak/io.github.Izukas017.Cato.yml
-flatpak build-bundle repo Cato-0.3.1-x86_64.flatpak io.github.Izukas017.Cato --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak build-bundle repo Cato-0.4.0-x86_64.flatpak io.github.Izukas017.Cato --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
 ```

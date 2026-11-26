@@ -18,7 +18,7 @@ enum Mode { Closed, Alert, Expanded, Game }
 public partial class NotchWindow : Window
 {
     internal static readonly CultureInfo Es = new("es-ES");
-    internal static readonly string[] PageNames = { "Música", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Widgets", "Terminal", "Claude", "Antigravity" };
+    internal static readonly string[] PageNames = { "Home", "Pomodoro", "Día y tiempo", "Agua", "Bandeja", "Portapapeles", "Tareas", "Terminal", "Claude", "Antigravity" };
     internal static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
     static readonly IBrush GreenB = B("#30D158"), BlueB = B("#0A84FF"), PurpleB = B("#8B7CF6"), DimB = B("#8CFFFFFF"),
         FaintB = B("#59FFFFFF"), CardB = B("#17FFFFFF"), TrackB = B("#33FFFFFF");
@@ -48,12 +48,16 @@ public partial class NotchWindow : Window
         if (TryGetPlatformHandle()?.Handle is { } h) X11Input.MakeDock(h);
         PlaceTopCenter();
         terminal = new TerminalPage(TakeKeyboard);
-        pages = new Panel[] { PageMusic, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, PageWidgets, terminal.Root, claudePage.Root, agPage.Root };
+        InitHome();
+        pages = new Panel[] { homeRoot, PagePomo, PageDay, PageWater, PageShelf, PageClip, PageTodo, terminal.Root, claudePage.Root, agPage.Root };
         Pages.Children.Add(terminal.Root);
         Pages.Children.Add(claudePage.Root);
         Pages.Children.Add(agPage.Root);
-        for (int i = 0; i < data.PageOrder.Count; i++) if (data.PageOrder[i] == "Rezo") data.PageOrder[i] = PageNames[2];
-        for (int i = 0; i < data.HiddenPages.Count; i++) if (data.HiddenPages[i] == "Rezo") data.HiddenPages[i] = PageNames[2];
+        claudePage.Footer(ClaudeLimits(false));
+        agPage.Footer(AgLimits(false));
+        // renamed pages ("Rezo" → "Día y tiempo", "Música" → "Home"): keep the user's order/visibility for them
+        foreach (var list in new[] { data.PageOrder, data.HiddenPages })
+            for (int i = 0; i < list.Count; i++) list[i] = list[i] switch { "Rezo" => PageNames[2], "Música" => PageNames[0], var n => n };
         InitTools();
         ApplySettings();
         page = VisiblePages()[0];
@@ -112,6 +116,24 @@ public partial class NotchWindow : Window
         var arg = args.FirstOrDefault(a => a.StartsWith("--show="))?[7..];
         if (arg == null) return;
         pinned = true;
+        if (args.FirstOrDefault(a => a.StartsWith("--widgets="))?[10..] is { } w) { data.HomeWidgets = w.Split(',').ToList(); BuildHome(); } // not saved unless edited
+        if (args.Contains("--editwidgets")) ToggleHomeEdit();
+        if (args.FirstOrDefault(a => a.StartsWith("--limits="))?[9..].Split(',') is [var five, var week]) // e.g. --limits=23,91 (not saved)
+        {
+            var t = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            (data.ClaudeFive, data.ClaudeFiveReset, data.ClaudeWeek, data.ClaudeWeekReset) = (double.Parse(five, CultureInfo.InvariantCulture), t + 8000, double.Parse(week, CultureInfo.InvariantCulture), t + 300000);
+        }
+#if DEBUG
+        // --snap=file.png: renders the notch to an image and quits (screenshots where the compositor won't show a dock window, e.g. WSLg)
+        if (args.FirstOrDefault(a => a.StartsWith("--snap="))?[7..] is { } snap)
+            DispatcherTimer.RunOnce(() =>
+            {
+                using var rtb = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize((int)Notch.Bounds.Width, (int)Notch.Bounds.Height));
+                rtb.Render(Notch);
+                rtb.Save(snap);
+                Environment.Exit(0);
+            }, TimeSpan.FromSeconds(4));
+#endif
         if (int.TryParse(arg, out var p)) { page = p; foreach (var pg in pages) pg.IsVisible = pg == pages[p]; GoTo(Mode.Expanded); }
         else if (arg == "alert") ShowAlert("IcBolt", GreenB, "Cargando", "Cargador conectado", "70%");
         else if (arg == "game") ToggleGame();
@@ -136,7 +158,7 @@ public partial class NotchWindow : Window
         if (data.Anim == AnimStyle.Liquida) data.Anim = AnimStyle.Suave;
         if (data.PageAnim == PageAnim.Liquida) data.PageAnim = PageAnim.Deslizar;
         var accent = B(data.Accent);
-        Ring.Stroke = HeaderRing.Stroke = accent;
+        Ring.Stroke = accent;
         IBrush values = data.GameAccent ? accent : Brushes.White;
         GCpu.Foreground = GGpu.Foreground = GRam.Foreground = GVram.Foreground = values;
         Glow.Background = GlowBrush();
@@ -146,6 +168,7 @@ public partial class NotchWindow : Window
         ApplyStyle();
         ConfigurePomo();
         InitWater();
+        BuildHome(); // picks up the accent and the visible pages
         var v = VisiblePages();
         if (!v.Contains(page)) ShowPage(v[0], 0);
         UpdateDots();
@@ -170,7 +193,7 @@ public partial class NotchWindow : Window
     {
         Mode.Closed => (200, 38, 18),
         Mode.Alert => (380, 62, 24),
-        Mode.Expanded => (580, 150, 27),
+        Mode.Expanded => (expanded.W, expanded.H, 27), // depends on the page (FitExpanded)
         _ => (gameWidth, 26, 13),
     };
 
@@ -238,7 +261,7 @@ public partial class NotchWindow : Window
     // ================= Zona de gracia =================
     DateTime? graceStart;
 
-    bool KeepOpen() => pinned || TaskInput.IsFocused || terminal.HasFocus || mode != Mode.Expanded;
+    bool KeepOpen() => pinned || TaskInput.IsFocused || terminal.HasFocus || homeNote?.IsFocused == true || mode != Mode.Expanded;
 
     void GraceTick()
     {
@@ -270,9 +293,6 @@ public partial class NotchWindow : Window
         var v = order.Where(n => !data.HiddenPages.Contains(n)).Select(n => Array.IndexOf(PageNames, n)).ToArray();
         return v.Length == 0 ? new[] { 0 } : v;
     }
-
-    void PrevPage_Click(object? s, RoutedEventArgs e) => Step(-1);
-    void NextPage_Click(object? s, RoutedEventArgs e) => Step(1);
 
     void Step(int d)
     {
@@ -323,29 +343,32 @@ public partial class NotchWindow : Window
             Dots.Children.Add(new Border { Width = i == page ? 14 : 5, Height = 5, CornerRadius = new CornerRadius(2.5), Background = i == page ? Brushes.White : FaintB });
     }
 
+    /// Pages other than Home name themselves under the user's name in the top bar (Home shows the date there).
     void SetTitle(string main, string accent = "", IBrush? accentBrush = null)
     {
+        if (page == 0) return;
         var inl = new InlineCollection { new Run(main) };
         if (accent != "") inl.Add(new Run(" " + accent) { Foreground = accentBrush ?? DimB, FontWeight = FontWeight.SemiBold });
-        PageTitle.Inlines = inl;
+        homeDate.Inlines = inl;
     }
 
     void OnPageShown(int i)
     {
         var now = DateTime.Now;
+        FitExpanded();
+        BuildHomeTabs(); // the bar is on every page: mark this one
         switch (i)
         {
-            case 0: SetTitle(""); UpdateMediaProgress(); break;
+            case 0: RefreshHome(); break;
             case 1: SetTitle("Pomodoro"); UpdatePomo(now); break;
             case 2: SetTitle("Tiempo", data.City); UpdateDay(now); break;
             case 3: SetTitle("Agua", "Recordatorio", BlueB); UpdateWater(); break;
             case 4: SetTitle("Bandeja"); UpdateShelf(); break;
             case 5: SetTitle("Portapapeles"); UpdateClip(); break;
             case 6: SetTitle("Tareas", "de hoy", GreenB); UpdateTodo(); break;
-            case 7: SetTitle("Widgets"); UpdateWidgets(); break;
-            case 8: SetTitle("Terminal", Environment.IsPrivilegedProcess ? "root" : "usuario", Environment.IsPrivilegedProcess ? OrangeB : DimB); break;
-            case 9: UpdateActivity(); break;
-            case 10: UpdateAntigravity(); break;
+            case 7: SetTitle("Terminal", Environment.IsPrivilegedProcess ? "root" : "usuario", Environment.IsPrivilegedProcess ? OrangeB : DimB); break;
+            case 8: UpdateActivity(); break;
+            case 9: UpdateAntigravity(); break;
         }
     }
 
@@ -355,10 +378,9 @@ public partial class NotchWindow : Window
     void UiTick()
     {
         var now = DateTime.Now;
-        Clock.Text = HeaderTime.Text = now.ToString("HH:mm");
-        HeaderDate.Text = now.ToString("ddd d MMM yyyy", Es);
+        Clock.Text = now.ToString("HH:mm");
         PomoTick(now);
-        if (mode == Mode.Expanded) UpdateMediaProgress();
+        HomeTick(now);
         if (now.Second % 5 == 0) PowerTick();
         if (now.Minute != lastMinute)
         {
@@ -367,9 +389,8 @@ public partial class NotchWindow : Window
             TodoReminders(now);
             if (PageVisible(2)) UpdateDay(now);
             if (PageVisible(5)) UpdateClip();
-            if (PageVisible(7)) UpdateWidgets();
-            if (PageVisible(9)) UpdateActivity();
-            if (PageVisible(10)) UpdateAntigravity();
+            if (PageVisible(8)) UpdateActivity();
+            if (PageVisible(9)) UpdateAntigravity();
         }
     }
 
@@ -430,7 +451,6 @@ public partial class NotchWindow : Window
         if (fraction == lastRing) return;
         lastRing = fraction;
         Ring.Data = RingGeometry(9, 7.5, fraction);
-        HeaderRing.Data = RingGeometry(6, 5, fraction);
     }
 
     // sound wave: bars bounce while music plays, flat white line when it's paused
@@ -445,7 +465,6 @@ public partial class NotchWindow : Window
         if (playing) { waveTimer.Start(); return; }
         waveTimer.Stop();
         foreach (var r in Wave.Children.OfType<Rectangle>()) r.Height = 4;
-        foreach (var r in HeaderWave.Children.OfType<Rectangle>()) r.Height = 3;
     }
 
     void WaveTick(object? s, EventArgs e)
@@ -455,8 +474,6 @@ public partial class NotchWindow : Window
         double[] speed = { 9.0, 12.5, 7.3, 10.8 }, phase = { 0, 1.7, 3.1, 4.4 };
         int i = 0;
         foreach (var r in Wave.Children.OfType<Rectangle>()) { r.Height = 4 + 14 * (0.5 + 0.5 * Math.Sin(t * speed[i] + phase[i])); i++; }
-        i = 0;
-        foreach (var r in HeaderWave.Children.OfType<Rectangle>()) { r.Height = 3 + 11 * (0.5 + 0.5 * Math.Sin(t * speed[i] + phase[i])); i++; }
     }
 
     internal static readonly Dictionary<string, string[]> GlowPalettes = new()

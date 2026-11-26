@@ -145,10 +145,12 @@ static class SunCalc
 public record Weather(double Temp, double Feels, double Max, double Min, int Code, bool IsDay, double Wind, int Humidity)
 {
     /// WMO weather code → glyph (Segoe UI Symbol) and Spanish text.
-    public (string Glyph, string Text) Describe() => Code switch
+    public (string Glyph, string Text) Describe() => Describe(Code, IsDay);
+
+    public static (string Glyph, string Text) Describe(int code, bool isDay) => code switch
     {
-        0 => (IsDay ? "☀" : "☾", "Despejado"),
-        1 or 2 => ("⛅", Code == 1 ? "Mayormente despejado" : "Parcialmente nublado"),
+        0 => (isDay ? "☀" : "☾", "Despejado"),
+        1 or 2 => ("⛅", code == 1 ? "Mayormente despejado" : "Parcialmente nublado"),
         3 => ("☁", "Nublado"),
         45 or 48 => ("☁", "Niebla"),
         >= 51 and <= 57 => ("☂", "Llovizna"),

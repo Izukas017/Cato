@@ -35,7 +35,9 @@ static class Notify
     {
         var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value;
         var sec = new PipeSecurity();
-        sec.SetSecurityDescriptorSddlForm($"D:(A;;GRGW;;;{sid})S:(ML;;NW;;;ME)"); // user: read+write; label: medium integrity may write
+        // user: read+write; label: medium integrity may write. Only an elevated Cato needs the label, and only it may set one:
+        // a normal one gets "privilege not held" and would never listen.
+        sec.SetSecurityDescriptorSddlForm(Environment.IsPrivilegedProcess ? $"D:(A;;GRGW;;;{sid})S:(ML;;NW;;;ME)" : $"D:(A;;GRGW;;;{sid})");
         return sec;
     }
 

@@ -56,8 +56,11 @@ sealed class SystemStats : IDisposable
     readonly PerformanceCounterCategory gpuCat = new("GPU Engine"), memCat = new("GPU Adapter Memory");
     readonly Dictionary<string, CounterSample> gpuPrev = new();
     readonly double? vramTotal = ReadVramTotal();
-    readonly FpsCounter? fps = FpsCounter.TryStart();
+    readonly FpsCounter? fps;
     readonly Stopwatch since = Stopwatch.StartNew();
+
+    /// `fps: false` for samplers that don't need frame rates (only one ETW session can run at a time).
+    public SystemStats(bool fps = true) => this.fps = fps ? FpsCounter.TryStart() : null;
 
     TempReader? temps;
     bool tempsTried;

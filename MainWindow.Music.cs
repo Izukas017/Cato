@@ -14,11 +14,14 @@ public partial class MainWindow
     List<LyricLine> lyrics = new();
     string lyricsKey = "";
     int lyricIndex = -2;
+    // what's playing, for the "Reproduciendo" widget on Home
+    string mediaTitle = "Nada sonando", mediaArtist = "";
+    ImageSource? mediaArt;
 
     static HttpClient CreateHttp()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.3.1");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.4.0");
         return h;
     }
 
@@ -32,7 +35,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            MediaTitle.Text = "Sin acceso a medios";
+            mediaTitle = "Sin acceso a medios";
             Debug.WriteLine(ex);
         }
     }
@@ -80,9 +83,9 @@ public partial class MainWindow
             }
             catch (Exception ex) { Debug.WriteLine(ex); } // session can vanish mid-call when the player closes
         }
-        MediaTitle.Text = LyrTitle.Text = title;
-        MediaArtist.Text = LyrArtist.Text = artist;
-        SetArt(ArtBox, ArtGlyph, art);
+        mediaTitle = LyrTitle.Text = title;
+        mediaArtist = LyrArtist.Text = artist;
+        mediaArt = art;
         SetArt(LyrArtBox, LyrArtGlyph, art);
         UpdatePlayState();
     }
@@ -110,7 +113,8 @@ public partial class MainWindow
     void UpdatePlayState()
     {
         var playing = IsPlaying();
-        PlayBtn.Content = PlayBtn2.Content = playing ? "" : "";
+        if (PageVisible(0)) RefreshHome();
+        PlayBtn2.Content = playing ? "" : "";
         SetWave(playing);
     }
 
@@ -143,9 +147,9 @@ public partial class MainWindow
     void UpdateMediaProgress()
     {
         var (pos, len) = Timeline();
-        MediaProgress.Value = LyrProgress.Value = len > TimeSpan.Zero ? pos / len : 0;
-        Elapsed.Text = LyrElapsed.Text = Fmt(pos);
-        Remaining.Text = LyrRemaining.Text = "-" + Fmt(len > pos ? len - pos : TimeSpan.Zero);
+        LyrProgress.Value = len > TimeSpan.Zero ? pos / len : 0;
+        LyrElapsed.Text = Fmt(pos);
+        LyrRemaining.Text = "-" + Fmt(len > pos ? len - pos : TimeSpan.Zero);
         if (mode == Mode.Lyrics) UpdateLyric(pos);
     }
 

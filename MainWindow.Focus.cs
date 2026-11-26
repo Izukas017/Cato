@@ -103,7 +103,7 @@ public partial class MainWindow
 
     DayPhases Phases(DateTime day) => SunCalc.For(day.Date, data.Lat, data.Lon, TimeZoneInfo.Local.GetUtcOffset(day).TotalHours);
 
-    static string Until(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes} min" : $"{Math.Max(1, t.Minutes)} min";
+    static string Until(TimeSpan t) => t.TotalDays >= 1 ? $"{(int)t.TotalDays} d {t.Hours} h" : t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes} min" : $"{Math.Max(1, t.Minutes)} min";
 
     void UpdateDay(DateTime now)
     {
@@ -114,8 +114,15 @@ public partial class MainWindow
         DayBar.Value = (now - from) / (nextAt - from);
         DrawSunArc(d, now, next);
         ShowWeather();
+        EnsureWeather(now);
+    }
+
+    void EnsureWeather(DateTime now)
+    {
         if (!weatherLoading && (weatherFor != (data.Lat, data.Lon) || (now - weatherAt).TotalMinutes > 15)) _ = LoadWeather();
     }
+
+    List<(DateTime Day, int Code, double Max, double Min)> forecast = new();
 
     void ShowWeather()
     {
@@ -143,7 +150,7 @@ public partial class MainWindow
             var inv = CultureInfo.InvariantCulture;
             var url = $"https://api.open-meteo.com/v1/forecast?latitude={data.Lat.ToString(inv)}&longitude={data.Lon.ToString(inv)}"
                 + "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,relative_humidity_2m"
-                + "&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1";
+                + "&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=5";
             using var doc = System.Text.Json.JsonDocument.Parse(await http.GetStringAsync(url));
             var c = doc.RootElement.GetProperty("current");
             var dl = doc.RootElement.GetProperty("daily");
@@ -152,12 +159,16 @@ public partial class MainWindow
                 dl.GetProperty("temperature_2m_max")[0].GetDouble(), dl.GetProperty("temperature_2m_min")[0].GetDouble(),
                 c.GetProperty("weather_code").GetInt32(), c.GetProperty("is_day").GetInt32() == 1,
                 c.GetProperty("wind_speed_10m").GetDouble(), c.GetProperty("relative_humidity_2m").GetInt32());
+            forecast = Enumerable.Range(0, dl.GetProperty("time").GetArrayLength()).Select(i => (
+                DateTime.Parse(dl.GetProperty("time")[i].GetString()!, CultureInfo.InvariantCulture), dl.GetProperty("weather_code")[i].GetInt32(),
+                dl.GetProperty("temperature_2m_max")[i].GetDouble(), dl.GetProperty("temperature_2m_min")[i].GetDouble())).ToList();
             weatherAt = DateTime.Now;
             weatherFor = at;
         }
         catch (Exception ex) { Debug.WriteLine(ex); weatherAt = DateTime.Now.AddMinutes(-10); } // offline: retry in ~5 min
         finally { weatherLoading = false; }
         if (PageVisible(2)) ShowWeather();
+        if (PageVisible(0)) RefreshHome();
     }
 
     /// city → (name, lat, lon) via Open-Meteo geocoding.

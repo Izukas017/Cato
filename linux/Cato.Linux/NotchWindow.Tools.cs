@@ -12,7 +12,7 @@ using IOPath = System.IO.Path;
 
 namespace Cato;
 
-// Bandeja, portapapeles, tareas y widgets.
+// Bandeja, portapapeles y tareas.
 public partial class NotchWindow
 {
     // ================= Bandeja =================
@@ -137,6 +137,7 @@ public partial class NotchWindow
         clips.Insert(0, (t, DateTime.Now));
         if (clips.Count > MaxClips) clips.RemoveRange(MaxClips, clips.Count - MaxClips);
         if (PageVisible(5)) UpdateClip();
+        if (PageVisible(0)) RefreshHome();
     }
 
     void UpdateClip()
@@ -259,51 +260,6 @@ public partial class NotchWindow
             Store.Save(data);
             ShowAlert("IcBell", GreenB, t.Text, "Recordatorio de tarea", t.At!);
             break; // one at a time; the rest show on the next minute
-        }
-    }
-
-    // ================= Widgets =================
-    void UpdateWidgets()
-    {
-        var today = DateTime.Today;
-        var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
-        WeekGrid.Children.Clear();
-        WeekGrid.ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*,*");
-        WeekGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
-        string[] letters = { "L", "M", "X", "J", "V", "S", "D" };
-        for (int i = 0; i < 7; i++)
-        {
-            var day = monday.AddDays(i);
-            var isToday = day == today;
-            WeekGrid.Children.Add(Col(new TextBlock { Text = letters[i], FontSize = 9, Foreground = DimB, HorizontalAlignment = HorizontalAlignment.Center }, i));
-            var cell = new Panel { Width = 18, Height = 18, Margin = new Thickness(0, 1, 0, 0) };
-            if (isToday) cell.Children.Add(new Ellipse { Fill = BlueB });
-            cell.Children.Add(new TextBlock
-            {
-                Text = day.Day.ToString(), FontSize = 10, FontWeight = isToday ? FontWeight.Bold : FontWeight.Normal,
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-            });
-            WeekGrid.Children.Add(Row(Col(cell, i), 1));
-        }
-        var pending = data.Todos.Count(t => !t.Done);
-        WeekTasks.Text = pending == 1 ? "1 tarea pendiente" : $"{pending} tareas pendientes";
-
-        if (SysInfo.TryBattery(out var charging, out var pct))
-        {
-            SysLabel.Text = "BATERÍA";
-            SysValue.Text = $"{pct}%";
-            SysState.Text = charging ? "Cargando" : "Con batería";
-            SysIcon.Data = Icon("IcBolt");
-            SysRing.Data = RingGeometry(22, 20, pct / 100.0);
-        }
-        else
-        {
-            var (load, used, total) = SysInfo.Memory();
-            SysLabel.Text = "MEMORIA";
-            SysValue.Text = $"{load}%";
-            SysState.Text = $"{used:0.0} de {total:0} GB";
-            SysIcon.Data = Icon("IcChip");
-            SysRing.Data = RingGeometry(22, 20, load / 100.0);
         }
     }
 }

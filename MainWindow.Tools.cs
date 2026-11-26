@@ -7,7 +7,7 @@ record ClipView(string Text, string Preview, string Age, Brush Border);
 record TodoView(TodoItem Item, string Text, Brush Bg, TextDecorationCollection? Deco, Brush CheckFill, double CheckStroke,
     string CheckGlyph, string Time, Visibility DelVis);
 
-// Bandeja, portapapeles, tareas y widgets.
+// Bandeja, portapapeles y tareas.
 public partial class MainWindow
 {
     // ================= Bandeja =================
@@ -129,6 +129,7 @@ public partial class MainWindow
             clips.Insert(0, (t, DateTime.Now));
             if (clips.Count > MaxClips) clips.RemoveRange(MaxClips, clips.Count - MaxClips);
             if (PageVisible(5)) UpdateClip();
+            if (PageVisible(0)) RefreshHome();
         }
         catch (COMException) { } // another app holds the clipboard lock; skip this update
     }
@@ -228,63 +229,6 @@ public partial class MainWindow
             Store.Save(data);
             ShowAlert("", GreenB, t.Text, "Recordatorio de tarea", t.At!);
             break; // one at a time; the rest show on the next minute
-        }
-    }
-
-    // ================= Widgets =================
-    void UpdateWidgets()
-    {
-        var today = DateTime.Today;
-        var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
-        WeekGrid.Children.Clear();
-        WeekGrid.ColumnDefinitions.Clear();
-        WeekGrid.RowDefinitions.Clear();
-        WeekGrid.RowDefinitions.Add(new RowDefinition());
-        WeekGrid.RowDefinitions.Add(new RowDefinition());
-        string[] letters = { "L", "M", "X", "J", "V", "S", "D" };
-        for (int i = 0; i < 7; i++)
-        {
-            WeekGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            var day = monday.AddDays(i);
-            var isToday = day == today;
-            var l = new TextBlock { Text = letters[i], FontSize = 9, Foreground = DimB, HorizontalAlignment = HorizontalAlignment.Center };
-            Grid.SetColumn(l, i);
-            WeekGrid.Children.Add(l);
-            var cell = new Grid { Width = 18, Height = 18, Margin = new Thickness(0, 1, 0, 0) };
-            if (isToday) cell.Children.Add(new Ellipse { Fill = BlueB });
-            cell.Children.Add(new TextBlock
-            {
-                Text = day.Day.ToString(), FontSize = 10, Foreground = Brushes.White, FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-            });
-            Grid.SetColumn(cell, i);
-            Grid.SetRow(cell, 1);
-            WeekGrid.Children.Add(cell);
-        }
-        var pending = data.Todos.Where(t => !t.Done).ToList();
-        WeekTasks.Text = pending.Count == 1 ? "1 tarea pendiente" : $"{pending.Count} tareas pendientes";
-        var nowHm = DateTime.Now.ToString("HH:mm");
-        var next = pending.Where(t => t.At != null && string.CompareOrdinal(t.At, nowHm) >= 0).OrderBy(t => t.At).FirstOrDefault();
-        WeekNext.Text = next != null ? $"Siguiente: {next.Text}, {next.At}" : "Sin recordatorios pendientes";
-
-        if (Native.TryPower(out var charging, out var pct))
-        {
-            SysLabel.Text = "BATERÍA";
-            SysValue.Text = $"{pct}%";
-            SysState.Text = charging ? "Cargando" : "Con batería";
-            SysSub.Text = charging ? "Enchufado" : "";
-            SysIcon.Text = charging ? "" : "";
-            SysRing.Data = RingGeometry(22, 20, pct / 100.0);
-        }
-        else
-        {
-            var load = Native.MemoryLoad();
-            SysLabel.Text = "MEMORIA";
-            SysValue.Text = $"{load}%";
-            SysState.Text = "En uso";
-            SysSub.Text = "Sin batería";
-            SysIcon.Text = "";
-            SysRing.Data = RingGeometry(22, 20, load / 100.0);
         }
     }
 }

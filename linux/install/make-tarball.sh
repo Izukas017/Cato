@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds artifacts/Cato-<version>-linux-x64.tar.gz (self-contained, with install.sh). Run from the repo root.
 set -e
-VERSION=0.3.1
+VERSION=0.4.0
 STAGE="artifacts/tar/cato-$VERSION"
 rm -rf artifacts/tar && mkdir -p "$STAGE"
 dotnet publish linux/Cato.Linux/Cato.Linux.csproj -c Release -r linux-x64 --self-contained true -p:DebugType=none -o "$STAGE/app"

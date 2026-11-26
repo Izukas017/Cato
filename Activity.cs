@@ -35,6 +35,25 @@ static class Activity
         catch (JsonException) { return null; }
     }
 
+    /// The plan limits in a Claude Code status line payload: used % (0-100) and reset time (Unix seconds) of the 5-hour and 7-day windows.
+    /// A window Claude Code left out is (-1, 0); null when the payload has no `rate_limits` at all (API key, or before the first reply).
+    public static (double Five, long FiveReset, double Week, long WeekReset)? Limits(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("rate_limits", out var r) || r.ValueKind != JsonValueKind.Object) return null;
+            (double, long) Window(string key) =>
+                r.TryGetProperty(key, out var w) && w.ValueKind == JsonValueKind.Object && w.TryGetProperty("used_percentage", out var u) && u.ValueKind == JsonValueKind.Number
+                    ? (u.GetDouble(), w.TryGetProperty("resets_at", out var t) && t.ValueKind == JsonValueKind.Number && t.TryGetInt64(out var s) ? s : 0)
+                    : (-1, 0);
+            var (five, fiveAt) = Window("five_hour");
+            var (week, weekAt) = Window("seven_day");
+            return (five, fiveAt, week, weekAt);
+        }
+        catch (JsonException) { return null; }
+    }
+
     static string Describe(string tool, JsonElement input)
     {
         string F(string key) => Str(input, key);

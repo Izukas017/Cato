@@ -3,7 +3,7 @@
 ; Luego: ISCC.exe installer\Cato.iss   ->  artifacts\CatoSetup-<versión>.exe
 
 #define AppName "Cato"
-#define AppVersion "0.3.1"
+#define AppVersion "0.4.0"
 #define AppExe "Cato.exe"
 
 [Setup]

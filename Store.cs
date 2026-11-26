@@ -68,6 +68,16 @@ public class Data
     public double Lon { get; set; } = -3.7038;
 
     public List<TodoItem> Todos { get; set; } = new();
+
+    // Home: widgets in the order they show (ids from MainWindow.HomeCatalog) and the quick note
+    public List<string> HomeWidgets { get; set; } = new() { "sistema", "tiempo", "musica", "volumen" };
+    public string Note { get; set; } = "";
+
+    // Claude plan limits, last seen in the status line (Cato.exe --statusline): used %, -1 = never seen; reset in Unix seconds
+    public double ClaudeFive { get; set; } = -1;
+    public long ClaudeFiveReset { get; set; }
+    public double ClaudeWeek { get; set; } = -1;
+    public long ClaudeWeekReset { get; set; }
 }
 
 static class Store

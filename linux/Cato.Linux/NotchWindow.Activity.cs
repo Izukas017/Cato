@@ -41,7 +41,8 @@ public partial class NotchWindow
         readonly Dictionary<string, AgentSession> sessions = new();
         readonly Grid single = new();
         readonly StackPanel multi = new() { IsVisible = false, VerticalAlignment = VerticalAlignment.Center };
-        readonly TextBlock action = new() { FontSize = 13, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 225, VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock action = new() { FontSize = 13, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 265, VerticalAlignment = VerticalAlignment.Center };
+        Action? footerRefresh;
         readonly TextBlock note = new() { Foreground = B("#CCFFFFFF"), FontSize = 11, TextWrapping = TextWrapping.Wrap, MaxHeight = 64, LineHeight = 15, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 4, 0, 0) };
         readonly TextBlock state = new() { Foreground = B("#8CFFFFFF"), FontSize = 10, Margin = new Thickness(0, 4, 0, 0) };
         readonly StackPanel list = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
@@ -50,7 +51,7 @@ public partial class NotchWindow
         {
             Title = title;
             this.empty = empty;
-            single.ColumnDefinitions.Add(new ColumnDefinition(260, GridUnitType.Pixel));
+            single.ColumnDefinitions.Add(new ColumnDefinition(300, GridUnitType.Pixel));
             single.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
             var head = new StackPanel { Orientation = Orientation.Horizontal };
             head.Children.Add(new Border { CornerRadius = new CornerRadius(5), ClipToBounds = true, Width = 18, Height = 18, Margin = new Thickness(0, 0, 8, 0), Child = new Image { Source = icon } });
@@ -62,9 +63,23 @@ public partial class NotchWindow
             Grid.SetColumn(list, 1);
             single.Children.Add(left);
             single.Children.Add(list);
+            Root.RowDefinitions = new RowDefinitions("*,Auto");
             Root.Children.Add(single);
             Root.Children.Add(multi);
         }
+
+        /// A strip under the feed that is always there (the plan limits).
+        public void Footer((Control Body, Action Refresh) f)
+        {
+            f.Body.Margin = new Thickness(0, 8, 0, 0);
+            Grid.SetRow(f.Body, 1);
+            Root.Children.Add(f.Body);
+            footerRefresh = f.Refresh;
+        }
+
+        /// Number of sessions, how many are working, and the latest one (for the Home widget).
+        public (int Count, int Working, AgentSession? Last) Overview() =>
+            (sessions.Count, sessions.Values.Count(s => s.EffectiveState == "working"), sessions.Values.MaxBy(s => s.At));
 
         public void Add(string evt, string id, string project, string act, string text)
         {
@@ -81,7 +96,7 @@ public partial class NotchWindow
             foreach (var old in sessions.Where(p => (now - p.Value.At).TotalMinutes > 30).Select(p => p.Key).ToList()) sessions.Remove(old);
         }
 
-        static (string Label, IBrush Dot) Look(string st) => st switch
+        public static (string Label, IBrush Dot) Look(string st) => st switch
         {
             "working" => ("Trabajando", GreenB),
             "waiting" => ("Te espera", OrangeB),
@@ -91,6 +106,7 @@ public partial class NotchWindow
         /// Redraws the page and returns the accent for the header title.
         public string Refresh()
         {
+            footerRefresh?.Invoke();
             var all = sessions.Values.OrderByDescending(s => s.At).ToList();
             single.IsVisible = all.Count <= 1;
             multi.IsVisible = all.Count > 1;
@@ -142,7 +158,8 @@ public partial class NotchWindow
     void OnActivity(string evt, string sessionId, string project, string action, string note)
     {
         claudePage.Add(evt, sessionId, project, action, note);
-        if (PageVisible(9)) UpdateActivity();
+        if (PageVisible(8)) UpdateActivity();
+        if (PageVisible(0)) RefreshHome();
     }
 
     void UpdateActivity() => SetTitle("Claude", claudePage.Refresh(), GreenB);
@@ -160,7 +177,8 @@ public partial class NotchWindow
     void OnAntigravity(string evt, string conversation, string action, string note)
     {
         agPage.Add(evt, conversation, "Antigravity", action, note);
-        if (PageVisible(10)) UpdateAntigravity();
+        if (PageVisible(9)) UpdateAntigravity();
+        if (PageVisible(0)) RefreshHome();
     }
 
     void OnAntigravityDone(string note) =>
@@ -173,5 +191,65 @@ public partial class NotchWindow
     {
         if (kind == "notify") OnClaudeDone(rest);
         else if (kind == "activity") { var f = rest.Split('\t', 5); if (f.Length == 5) OnActivity(f[0], f[1], f[2], f[3], f[4]); }
+        else if (kind == "limits") OnLimits(rest);
     }
+
+    // ---- Plan limits ----
+    /// `five<TAB>fiveReset<TAB>week<TAB>weekReset` from `cato --statusline`. A window it left out (-1) keeps the last value seen.
+    void OnLimits(string text)
+    {
+        var f = text.Split('\t');
+        var inv = CultureInfo.InvariantCulture;
+        if (f.Length != 4 || !double.TryParse(f[0], inv, out var five) || !long.TryParse(f[1], out var fiveAt)
+            || !double.TryParse(f[2], inv, out var week) || !long.TryParse(f[3], out var weekAt)) return;
+        if (five >= 0) (data.ClaudeFive, data.ClaudeFiveReset) = (five, fiveAt);
+        if (week >= 0) (data.ClaudeWeek, data.ClaudeWeekReset) = (week, weekAt);
+        Store.Save(data);
+        if (PageVisible(8)) UpdateActivity();
+        if (PageVisible(0)) RefreshHome();
+    }
+
+    static readonly IBrush LimitRed = B("#FF453A");
+
+    /// Claude's 5-hour and 7-day limits as bars. `compact` (Home widget): no "se reinicia" column.
+    (Control, Action) ClaudeLimits(bool compact)
+    {
+        var p = new StackPanel();
+        var empty = new TextBlock { Text = compact ? "Límites: falta la statusline" : "Límites: conecta la statusline de Claude Code (ver el README)", Foreground = FaintB, FontSize = 10.5, TextTrimming = TextTrimming.CharacterEllipsis };
+        p.Children.Add(empty);
+        var rows = new List<(Func<(double Used, long At)> Get, ProgressBar Bar, TextBlock Pct, TextBlock Reset, Grid Row)>();
+        foreach (var (label, get) in new (string, Func<(double, long)>)[] { ("5 h", () => (data.ClaudeFive, data.ClaudeFiveReset)), ("7 días", () => (data.ClaudeWeek, data.ClaudeWeekReset)) })
+        {
+            var row = new Grid { Margin = new Thickness(0, compact ? 2 : 3, 0, 0), ColumnDefinitions = new ColumnDefinitions(compact ? "40,*,38,0" : "50,*,38,150") };
+            var name = new TextBlock { Text = label, Foreground = DimB, FontSize = compact ? 10.5 : 11, VerticalAlignment = VerticalAlignment.Center };
+            var bar = new ProgressBar { Classes = { "thin" }, VerticalAlignment = VerticalAlignment.Center };
+            var pct = new TextBlock { FontSize = compact ? 10.5 : 11, FontWeight = FontWeight.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+            var reset = new TextBlock { Foreground = FaintB, FontSize = 10.5, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+            Grid.SetColumn(bar, 1); Grid.SetColumn(pct, 2); Grid.SetColumn(reset, 3);
+            foreach (var e in new Control[] { name, bar, pct, reset }) row.Children.Add(e);
+            p.Children.Add(row);
+            rows.Add((get, bar, pct, reset, row));
+        }
+        return (p, () =>
+        {
+            var seen = data.ClaudeFive >= 0 || data.ClaudeWeek >= 0;
+            empty.IsVisible = !seen;
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            foreach (var (get, bar, pct, reset, row) in rows)
+            {
+                row.IsVisible = seen;
+                var (used, at) = get();
+                var passed = at > 0 && at <= now; // the window reset since the last status line: it starts again from 0
+                var u = used < 0 || passed ? 0 : used;
+                bar.Value = Math.Clamp(u / 100, 0, 1);
+                bar.Foreground = u >= 90 ? LimitRed : u >= 70 ? OrangeB : BlueB;
+                pct.Text = used < 0 ? "—" : $"{u:0} %";
+                reset.Text = used < 0 || at == 0 ? "" : passed ? "reiniciado" : "se reinicia en " + Until(TimeSpan.FromSeconds(at - now));
+            }
+        });
+    }
+
+    /// Antigravity keeps its quota behind its own local server (a token Cato cannot get), so this only says where to look.
+    static (Control, Action) AgLimits(bool compact) =>
+        (new TextBlock { Text = compact ? "Límites: solo en Antigravity" : "Límites: Antigravity no los comparte; míralos en su panel de modelos", Foreground = FaintB, FontSize = 10.5, TextTrimming = TextTrimming.CharacterEllipsis }, () => { });
 }

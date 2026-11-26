@@ -23,7 +23,7 @@ public partial class NotchWindow
     static HttpClient CreateHttp()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.3.1 (Linux)");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("Cato/0.4.0 (Linux)");
         return h;
     }
 
@@ -41,9 +41,10 @@ public partial class NotchWindow
         data.Todos.RemoveAll(t => t.Done && t.Day != Today);
     }
 
-    // ================= Música (MPRIS) y letras (lrclib.net: recibe título y artista) =================
+    // ================= Música (MPRIS) y letras (lrclib.net: recibe título y artista); se ve en el widget de Home =================
     readonly Mpris mpris = new();
     MediaInfo? media;
+    Bitmap? mediaArt;
     DateTime mediaAt;
     string artUrl = "", lyricsKey = "";
     List<LyricLine> lyrics = new();
@@ -62,20 +63,16 @@ public partial class NotchWindow
     {
         media = m;
         mediaAt = DateTime.Now;
-        MediaTitle.Text = m?.Title is { Length: > 0 } t ? t : "Nada sonando";
-        MediaArtist.Text = m?.Artist ?? "";
-        PlayIcon.Data = Icon(m?.Playing == true ? "IcPause" : "IcPlay");
         SetWave(m?.Playing == true);
         var key = m == null ? "" : m.Title + "|" + m.Artist;
         if (key != lyricsKey)
         {
             lyricsKey = key;
             lyrics = new();
-            LyricLine.IsVisible = false;
             if (m != null && data.Lyrics) _ = LoadLyrics(key, m.Title, m.Artist);
         }
         if ((m?.ArtUrl ?? "") != artUrl) { artUrl = m?.ArtUrl ?? ""; _ = LoadArt(artUrl); }
-        if (mode == Mode.Expanded) UpdateMediaProgress();
+        if (PageVisible(0)) RefreshHome();
     }
 
     (TimeSpan Pos, TimeSpan Len) Timeline()
@@ -87,16 +84,8 @@ public partial class NotchWindow
 
     static string Fmt(TimeSpan t) => $"{(int)t.TotalMinutes}:{t.Seconds:00}";
 
-    void UpdateMediaProgress()
-    {
-        var (pos, len) = Timeline();
-        MediaProgress.Value = len > TimeSpan.Zero ? pos / len : 0;
-        Elapsed.Text = Fmt(pos);
-        Remaining.Text = "-" + Fmt(len > pos ? len - pos : TimeSpan.Zero);
-        var line = lyrics.LastOrDefault(l => l.At <= pos)?.Text;
-        LyricLine.IsVisible = data.Lyrics && !string.IsNullOrEmpty(line);
-        LyricLine.Text = line ?? "";
-    }
+    /// The lyric line playing now, or "" (no lyrics, or turned off).
+    string CurrentLyric() => data.Lyrics ? lyrics.LastOrDefault(l => l.At <= Timeline().Pos)?.Text ?? "" : "";
 
     async Task LoadArt(string url)
     {
@@ -108,8 +97,8 @@ public partial class NotchWindow
         }
         catch (Exception ex) { Debug.WriteLine(ex); } // unreachable or not an image: keep the music glyph
         if (url != artUrl) return;
-        Art.Source = bmp;
-        ArtGlyph.IsVisible = bmp == null;
+        mediaArt = bmp;
+        if (PageVisible(0)) RefreshHome();
     }
 
     async Task LoadLyrics(string key, string title, string artist)
@@ -223,7 +212,7 @@ public partial class NotchWindow
 
     DayPhases Phases(DateTime day) => SunCalc.For(day.Date, data.Lat, data.Lon, TimeZoneInfo.Local.GetUtcOffset(day).TotalHours);
 
-    static string Until(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes} min" : $"{Math.Max(1, t.Minutes)} min";
+    static string Until(TimeSpan t) => t.TotalDays >= 1 ? $"{(int)t.TotalDays} d {t.Hours} h" : t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes} min" : $"{Math.Max(1, t.Minutes)} min";
 
     void UpdateDay(DateTime now)
     {
@@ -234,8 +223,16 @@ public partial class NotchWindow
         DayBar.Value = (now - from) / (nextAt - from);
         DrawSunArc(d, now, next);
         ShowWeather();
+        EnsureWeather(now);
+    }
+
+    /// Loads the weather when it is missing, stale (15 min) or for another city.
+    void EnsureWeather(DateTime now)
+    {
         if (!weatherLoading && (weatherFor != (data.Lat, data.Lon) || (now - weatherAt).TotalMinutes > 15)) _ = LoadWeather();
     }
+
+    List<(DateTime Day, int Code, double Max, double Min)> forecast = new();
 
     void ShowWeather()
     {
@@ -261,7 +258,7 @@ public partial class NotchWindow
             var inv = CultureInfo.InvariantCulture;
             var url = $"https://api.open-meteo.com/v1/forecast?latitude={data.Lat.ToString(inv)}&longitude={data.Lon.ToString(inv)}"
                 + "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,relative_humidity_2m"
-                + "&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1";
+                + "&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=5";
             using var doc = JsonDocument.Parse(await http.GetStringAsync(url));
             var c = doc.RootElement.GetProperty("current");
             var dl = doc.RootElement.GetProperty("daily");
@@ -270,12 +267,16 @@ public partial class NotchWindow
                 dl.GetProperty("temperature_2m_max")[0].GetDouble(), dl.GetProperty("temperature_2m_min")[0].GetDouble(),
                 c.GetProperty("weather_code").GetInt32(), c.GetProperty("is_day").GetInt32() == 1,
                 c.GetProperty("wind_speed_10m").GetDouble(), c.GetProperty("relative_humidity_2m").GetInt32());
+            forecast = Enumerable.Range(0, dl.GetProperty("time").GetArrayLength()).Select(i => (
+                DateTime.Parse(dl.GetProperty("time")[i].GetString()!, CultureInfo.InvariantCulture), dl.GetProperty("weather_code")[i].GetInt32(),
+                dl.GetProperty("temperature_2m_max")[i].GetDouble(), dl.GetProperty("temperature_2m_min")[i].GetDouble())).ToList();
             weatherAt = DateTime.Now;
             weatherFor = at;
         }
         catch (Exception ex) { Debug.WriteLine(ex); weatherAt = DateTime.Now.AddMinutes(-10); } // offline: retry in ~5 min
         finally { weatherLoading = false; }
         if (PageVisible(2)) ShowWeather();
+        if (PageVisible(0)) RefreshHome();
     }
 
     /// city → (name, lat, lon) via Open-Meteo geocoding.
